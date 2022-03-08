@@ -1,0 +1,32 @@
+plugins {
+  id 'java'
+  id 'application'
+  id 'org.openjfx.javafxplugin' version '0.0.10'
+}
+
+group 'me.petrolingus'
+version '1.0-SNAPSHOT'
+
+repositories {
+  mavenCentral()
+}
+
+sourceCompatibility = '17'
+targetCompatibility = '17'
+
+tasks.withType(JavaCompile) {
+  options.encoding = 'UTF-8'
+}
+
+application {
+  mainClass = 'me.petrolingus.electricfieldlines.Application'
+}
+
+javafx {
+  version = '17.0.1'
+  modules = ['javafx.controls', 'javafx.fxml']
+}
+
+dependencies {
+
+}
