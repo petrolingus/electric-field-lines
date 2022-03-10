@@ -12,10 +12,7 @@ import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
 import java.awt.event.MouseListener;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 public class Controller {
 
@@ -31,28 +28,142 @@ public class Controller {
     private double timer = 0;
 
     record Point(double x, double y, Color color) {
-
+        double mod() {
+            return x * x + y * y;
+        }
     }
+
+    static class Triangle {
+
+        int aid;
+        int bid;
+        int cid;
+
+        double cx;
+        double cy;
+        double r;
+
+        boolean bad = false;
+
+        public Triangle(int aid, int bid, int cid) {
+            this.aid = aid;
+            this.bid = bid;
+            this.cid = cid;
+            calcCircle();
+        }
+
+        private void calcCircle() {
+
+            Point a = Controller.vertices.get(aid);
+            Point b = Controller.vertices.get(bid);
+            Point c = Controller.vertices.get(cid);
+
+            double aa = a.mod();
+            double bb = b.mod();
+            double cc = c.mod();
+
+            double d = 2 * (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y));
+            this.cx = (aa * (b.y - c.y) + bb * (c.y - a.y) + cc * (a.y - b.y)) / d;
+            this.cy = (aa * (c.x - b.x) + bb * (a.x - c.x) + cc * (b.x - a.x)) / d;
+
+            double dx = cx - a.x;
+            double dy = cy - a.y;
+            this.r = Math.sqrt(dx * dx + dy * dy);
+        }
+
+        public boolean isContain(double x, double y) {
+            double dx = cx - x;
+            double dy = cy - y;
+            return Math.sqrt(dx * dx + dy * dy) < this.r;
+        }
+
+        public List<List<Integer>> getEdges() {
+            List<Integer> edge0 = List.of(Math.min(aid, bid), Math.max(aid, bid));
+            List<Integer> edge1 = List.of(Math.min(bid, cid), Math.max(bid, cid));
+            List<Integer> edge2 = List.of(Math.min(cid, aid), Math.max(cid, aid));
+            return List.of(edge0, edge1, edge2);
+        }
+
+        @Override
+        public String toString() {
+            return "Triangle{" +
+                    "aid=" + aid +
+                    ", bid=" + bid +
+                    ", cid=" + cid +
+                    ", cx=" + cx +
+                    ", cy=" + cy +
+                    ", r=" + r +
+                    ", bad=" + bad +
+                    '}';
+        }
+    }
+
+    public static final List<Triangle> triangles = new ArrayList<>();
+
+    public static final List<Point> vertices = new ArrayList<>();
 
     public void initialize() {
         draw();
 
-        KeyFrame rotate = new KeyFrame(
-                Duration.seconds(0.1),
-                event -> {
-                    timer += 0.05;
-                    r1 = 0.1 + 0.8 * (1 + Math.cos(timer)) / 2;
-                    draw();
-                }
-        );
-
-        Timeline timeline = new Timeline(rotate);
-        timeline.setCycleCount(Animation.INDEFINITE);
-        timeline.play();
+//        KeyFrame rotate = new KeyFrame(
+//                Duration.seconds(0.1),
+//                event -> {
+//                    timer += 0.05;
+//                    r1 = 0.1 + 0.8 * (1 + Math.cos(timer)) / 2;
+//                    draw();
+//                }
+//        );
+//
+//        Timeline timeline = new Timeline(rotate);
+//        timeline.setCycleCount(Animation.INDEFINITE);
+//        timeline.play();
 
     }
 
+    private void methodBowerWatson(double x, double y) {
+
+        vertices.add(new Point(x, y, Color.WHITE));
+
+        List<Integer> badTriangles = new ArrayList<>();
+        for (int i = 0; i < triangles.size(); i++) {
+            if (triangles.get(i).isContain(x, y)) {
+                badTriangles.add(i);
+                triangles.get(i).bad = true;
+            }
+        }
+
+        List<List<Integer>> polygon = new ArrayList<>();
+
+        for (int i = 0; i < badTriangles.size(); i++) {
+            List<List<Integer>> edges = triangles.get(badTriangles.get(i)).getEdges();
+            for (int j = 0; j < 3; j++) {
+                List<Integer> edge = edges.get(j);
+                boolean edgeIsNotShared = true;
+                for (int k = 0; k < badTriangles.size(); k++) {
+                    if (i == k) continue;
+                    List<List<Integer>> otherEdges = triangles.get(badTriangles.get(k)).getEdges();
+                    for (int w = 0; w < 3; w++) {
+                        List<Integer> otherEdge = otherEdges.get(w);
+                        boolean c1 = edge.get(0).equals(otherEdge.get(0)) && edge.get(1).equals(otherEdge.get(1));
+                        edgeIsNotShared &= !c1;
+                    }
+                }
+                if (edgeIsNotShared) {
+                    polygon.add(edge);
+                }
+            }
+        }
+
+        triangles.removeIf(t -> t.bad);
+
+        for (List<Integer> edge : polygon) {
+            triangles.add(new Triangle(edge.get(0), edge.get(1), vertices.size() - 1));
+        }
+    }
+
     private void draw() {
+
+        // GENERATION OF POINTS ////////////////////////////////////////////////////////////////////////////////////////
 
         double cx = 0;
         double cy = 0;
@@ -120,6 +231,55 @@ public class Controller {
         points.addAll(redPoints);
         points.addAll(bluePoints);
 
+        // TRIANGULATION ///////////////////////////////////////////////////////////////////////////////////////////////
+
+        Point p0 = new Point(-1, -1, Color.WHITE);
+        Point p1 = new Point(1, -1, Color.WHITE);
+        Point p2 = new Point(1, 1, Color.WHITE);
+        Point p3 = new Point(-1, 1, Color.WHITE);
+
+        vertices.add(p0);
+        vertices.add(p1);
+        vertices.add(p2);
+        vertices.add(p3);
+
+        triangles.add(new Triangle(0, 1, 2));
+        triangles.add(new Triangle(0, 2, 3));
+
+//        for (int i = 0; i < 1000; i++) {
+//            double r = 0.9 * Math.random();
+//            double t = 2 * Math.PI * Math.random();
+//            double x = r * Math.cos(t);
+//            double y = r * Math.sin(t);
+//            methodBowerWatson(x, y);
+//        }
+
+        for (Point p : points) {
+            double x = p.x;
+            double y = p.y;
+            methodBowerWatson(x, y);
+        }
+
+        methodBowerWatson(0, 0);
+
+        triangles.removeIf(t -> {
+            boolean res = false;
+            for (int i = 0; i < 4; i++) {
+                boolean c0 = t.aid == i;
+                boolean c1 = t.bid == i;
+                boolean c2 = t.cid == i;
+                res |= c0 || c1 || c2;
+            }
+            return res;
+        });
+
+        triangles.removeIf(t -> {
+            boolean c0 = t.aid == vertices.size() - 1;
+            boolean c1 = t.bid == vertices.size() - 1;
+            boolean c2 = t.cid == vertices.size() - 1;
+            return c0 || c1 || c2;
+        });
+
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         GraphicsContext graphicsContext = canvas.getGraphicsContext2D();
@@ -133,29 +293,46 @@ public class Controller {
         double zoom = 0.4 * canvas.getHeight();
         graphicsContext.scale(zoom, zoom);
 
-        graphicsContext.setStroke(Color.BLUE);
-        graphicsContext.setLineWidth(1 / zoom);
-        double const1 = Math.sqrt(2) / 2;
-        graphicsContext.strokeLine(-const1, -1, -const1, 1);
-        graphicsContext.strokeLine(const1, -1, const1, 1);
-        graphicsContext.setStroke(Color.GREEN);
-        graphicsContext.strokeLine(-1, -const1, 1, -const1);
-        graphicsContext.strokeLine(-1, const1, 1, const1);
+//        graphicsContext.setStroke(Color.BLUE);
+//        graphicsContext.setLineWidth(1 / zoom);
+//        double const1 = Math.sqrt(2) / 2;
+//        graphicsContext.strokeLine(-const1, -1, -const1, 1);
+//        graphicsContext.strokeLine(const1, -1, const1, 1);
+//        graphicsContext.setStroke(Color.GREEN);
+//        graphicsContext.strokeLine(-1, -const1, 1, -const1);
+//        graphicsContext.strokeLine(-1, const1, 1, const1);
+//
+//        graphicsContext.setStroke(Color.BLUE);
+//        graphicsContext.setLineWidth(1 / zoom);
+//        double const2 = r1 * COS135;
+//        graphicsContext.strokeLine(-const2 + cx, -1, -const2 + cx, 1);
+//        graphicsContext.strokeLine(const2 + cx, -1, const2 + cx, 1);
+//        graphicsContext.setStroke(Color.GREEN);
+//        graphicsContext.strokeLine(-1, -const2 + cy, 1, -const2 + cy);
+//        graphicsContext.strokeLine(-1, const2 + cy, 1, const2 + cy);
 
-        graphicsContext.setStroke(Color.BLUE);
-        graphicsContext.setLineWidth(1 / zoom);
-        double const2 = r1 * COS135;
-        graphicsContext.strokeLine(-const2 + cx, -1, -const2 + cx, 1);
-        graphicsContext.strokeLine(const2 + cx, -1, const2 + cx, 1);
-        graphicsContext.setStroke(Color.GREEN);
-        graphicsContext.strokeLine(-1, -const2 + cy, 1, -const2 + cy);
-        graphicsContext.strokeLine(-1, const2 + cy, 1, const2 + cy);
+//        double r = 0.01;
+//        for (Point p : points) {
+//            graphicsContext.setFill(p.color);
+//            graphicsContext.fillOval(p.x - r, p.y - r, 2 * r, 2 * r);
+//        }
 
-        double r = 0.01;
-        for (Point p : points) {
-            graphicsContext.setFill(p.color);
-            graphicsContext.fillOval(p.x - r, p.y - r, 2 * r, 2 * r);
+        graphicsContext.setStroke(Color.RED);
+        graphicsContext.setLineWidth(0.5 * (1 / zoom));
+        for (Triangle t : triangles) {
+            Point a = vertices.get(t.aid);
+            Point b = vertices.get(t.bid);
+            Point c = vertices.get(t.cid);
+            graphicsContext.strokeLine(a.x, a.y, b.x, b.y);
+            graphicsContext.strokeLine(b.x, b.y, c.x, c.y);
+            graphicsContext.strokeLine(c.x, c.y, a.x, a.y);
         }
+
+//        double r = 0.01;
+//        for (Point p : vertices) {
+//            graphicsContext.setFill(p.color);
+//            graphicsContext.fillOval(p.x - r, p.y - r, 2 * r, 2 * r);
+//        }
 
         graphicsContext.restore();
 
