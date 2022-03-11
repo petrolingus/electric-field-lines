@@ -5,6 +5,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import me.petrolingus.electricfieldlines.util.Point;
+import me.petrolingus.electricfieldlines.util.Point3d;
 import me.petrolingus.electricfieldlines.util.Triangle;
 
 import java.util.ArrayList;
@@ -29,6 +30,9 @@ public class Controller {
     public static final List<Point> points = new ArrayList<>();
     public double cx = 0.3;
     public double cy = 0;
+
+    public static final List<Point3d> whitePoints = new ArrayList<>();
+    public static final List<Point3d> edgePoints = new ArrayList<>();
 
     public void initialize() {
         generationOfPoints();
@@ -57,6 +61,7 @@ public class Controller {
                 boolean condition = isOuterContain && !isCloseToOuterCircle && !isInnerCircleContain && !isCloseToInnerCircle;
                 if (condition) {
                     points.add(new Point(x, y, Color.WHITE));
+                    whitePoints.add(new Point3d(x, y, 0));
                 }
                 indexOuter135 = (indexOuter135 == -1 && x > COS135) ? j : indexOuter135;
                 indexInner135xLeft = (indexInner135xLeft == -1 && x > cx + RADIUS * COS135) ? j : indexInner135xLeft;
@@ -75,6 +80,10 @@ public class Controller {
             redPoints.add(new Point(a, b, Color.RED));
             redPoints.add(new Point(b, a, Color.RED));
             redPoints.add(new Point(-b, a, Color.RED));
+            edgePoints.add(new Point3d(a, -b, 0));
+            edgePoints.add(new Point3d(a, b, 0));
+            edgePoints.add(new Point3d(b, a, 0));
+            edgePoints.add(new Point3d(-b, a, 0));
         }
 
         // Add blue points (inner circle)
@@ -84,12 +93,16 @@ public class Controller {
             double b = Math.sqrt(RADIUS * RADIUS - (a - cx) * (a - cx));
             bluePoints.add(new Point(a, -b + cy, Color.BLUE));
             bluePoints.add(new Point(a, b + cy, Color.BLUE));
+            edgePoints.add(new Point3d(a, -b + cy, 0));
+            edgePoints.add(new Point3d(a, b + cy, 0));
         }
         for (int i = indexInner135yLeft; i < indexInner135yRight; i++) {
             double a = -1 + i * step;
             double b = Math.sqrt(RADIUS * RADIUS - (a - cy) * (a - cy));
             bluePoints.add(new Point(b + cx, a, Color.BLUE));
             bluePoints.add(new Point(-b + cx, a, Color.BLUE));
+            edgePoints.add(new Point3d(b + cx, a, 0));
+            edgePoints.add(new Point3d(-b + cx, a, 0));
         }
 
         points.addAll(redPoints);
@@ -201,21 +214,31 @@ public class Controller {
         graphicsContext.scale(zoom, zoom);
 
         // Draw triangles
-        graphicsContext.setStroke(Color.GREEN);
-        graphicsContext.setLineWidth(2 * (1 / zoom));
-        for (Triangle t : triangles) {
-            Point a = vertices.get(t.getAid());
-            Point b = vertices.get(t.getBid());
-            Point c = vertices.get(t.getCid());
-            graphicsContext.strokeLine(a.x(), a.y(), b.x(), b.y());
-            graphicsContext.strokeLine(b.x(), b.y(), c.x(), c.y());
-            graphicsContext.strokeLine(c.x(), c.y(), a.x(), a.y());
-        }
+//        graphicsContext.setStroke(Color.GREEN);
+//        graphicsContext.setLineWidth(2 * (1 / zoom));
+//        for (Triangle t : triangles) {
+//            Point a = vertices.get(t.getAid());
+//            Point b = vertices.get(t.getBid());
+//            Point c = vertices.get(t.getCid());
+//            graphicsContext.strokeLine(a.x(), a.y(), b.x(), b.y());
+//            graphicsContext.strokeLine(b.x(), b.y(), c.x(), c.y());
+//            graphicsContext.strokeLine(c.x(), c.y(), a.x(), a.y());
+//        }
 
         // Draw points
         double r = 0.01;
-        for (Point p : vertices) {
-            graphicsContext.setFill(p.color());
+//        for (Point p : vertices) {
+//            graphicsContext.setFill(p.color());
+//            graphicsContext.fillOval(p.x() - r, p.y() - r, 2 * r, 2 * r);
+//        }
+
+        graphicsContext.setFill(Color.WHITE);
+        for (Point3d p : whitePoints) {
+            graphicsContext.fillOval(p.x() - r, p.y() - r, 2 * r, 2 * r);
+        }
+
+        graphicsContext.setFill(Color.RED);
+        for (Point3d p : edgePoints) {
             graphicsContext.fillOval(p.x() - r, p.y() - r, 2 * r, 2 * r);
         }
 
