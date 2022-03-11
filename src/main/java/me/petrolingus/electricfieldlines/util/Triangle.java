@@ -10,6 +10,10 @@ public class Triangle {
     private final int bid;
     private final int cid;
 
+    private final int raid;
+    private final int rbid;
+    private final int rcid;
+
     private double cx;
     private double cy;
     private double r;
@@ -20,14 +24,17 @@ public class Triangle {
         this.aid = aid;
         this.bid = bid;
         this.cid = cid;
+        this.raid = aid - 5;
+        this.rbid = bid - 5;
+        this.rcid = cid - 5;
         calcCircle();
     }
 
     private void calcCircle() {
 
-        Point a = Controller.vertices.get(aid);
-        Point b = Controller.vertices.get(bid);
-        Point c = Controller.vertices.get(cid);
+        Point3d a = Controller.vertices.get(aid);
+        Point3d b = Controller.vertices.get(bid);
+        Point3d c = Controller.vertices.get(cid);
 
         double aa = a.mod();
         double bb = b.mod();

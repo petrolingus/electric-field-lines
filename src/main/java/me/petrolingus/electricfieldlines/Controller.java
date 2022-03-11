@@ -10,6 +10,7 @@ import me.petrolingus.electricfieldlines.util.Triangle;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Controller {
 
@@ -19,24 +20,25 @@ public class Controller {
     private static final double RADIUS = 0.5;
     private static final double SHIFT = 0.2;
     private static final double ANGLE = 0.5;
-    private static final int N = 16;
+    private static final int N = 32;
 
     private static final double COS135 = -Math.sqrt(2) / 2;
 
     public static final List<Triangle> triangles = new ArrayList<>();
-
-    public static final List<Point> vertices = new ArrayList<>();
+    public static final List<Point3d> vertices = new ArrayList<>();
 
     public static final List<Point> points = new ArrayList<>();
-    public double cx = 0.3;
+    public double cx = 0.2;
     public double cy = 0;
 
     public static final List<Point3d> whitePoints = new ArrayList<>();
     public static final List<Point3d> edgePoints = new ArrayList<>();
+    public static List<Point3d> purePoints = new ArrayList<>();
 
     public void initialize() {
         generationOfPoints();
         triangulation();
+        process();
         draw();
     }
 
@@ -109,9 +111,9 @@ public class Controller {
         points.addAll(bluePoints);
     }
 
-    private void methodBowerWatson(double x, double y) {
+    private void methodBowerWatson(double x, double y, boolean isEdge) {
 
-        vertices.add(new Point(x, y, Color.WHITE));
+        vertices.add(new Point3d(x, y, 0, isEdge));
 
         List<Integer> badTriangles = new ArrayList<>();
         for (int i = 0; i < triangles.size(); i++) {
@@ -152,10 +154,10 @@ public class Controller {
 
     private void triangulation() {
 
-        Point p0 = new Point(-1, -1, Color.WHITE);
-        Point p1 = new Point(1, -1, Color.WHITE);
-        Point p2 = new Point(1, 1, Color.WHITE);
-        Point p3 = new Point(-1, 1, Color.WHITE);
+        Point3d p0 = new Point3d(-1, -1, 0);
+        Point3d p1 = new Point3d(1, -1, 0);
+        Point3d p2 = new Point3d(1, 1, 0);
+        Point3d p3 = new Point3d(-1, 1, 0);
 
         vertices.add(p0);
         vertices.add(p1);
@@ -165,41 +167,48 @@ public class Controller {
         triangles.add(new Triangle(0, 1, 2));
         triangles.add(new Triangle(0, 2, 3));
 
-        methodBowerWatson(cx, cy);
+        methodBowerWatson(cx, cy, false);
 
-        for (Point p : points) {
+        for (Point3d p : whitePoints) {
             double x = p.x();
             double y = p.y();
-            methodBowerWatson(x, y);
+            methodBowerWatson(x, y, false);
+        }
+
+        for (Point3d p : edgePoints) {
+            double x = p.x();
+            double y = p.y();
+            methodBowerWatson(x, y, true);
         }
 
         // Remove super-structure triangles
-//        triangles.removeIf(t -> {
-//            boolean res = false;
-//            for (int i = 0; i < 4; i++) {
-//                boolean c0 = t.getAid() == i;
-//                boolean c1 = t.getBid() == i;
-//                boolean c2 = t.getCid() == i;
-//                res |= c0 || c1 || c2;
-//            }
-//            return res;
-//        });
+        triangles.removeIf(t -> {
+            boolean res = false;
+            for (int i = 0; i < 4; i++) {
+                boolean c0 = t.getAid() == i;
+                boolean c1 = t.getBid() == i;
+                boolean c2 = t.getCid() == i;
+                res |= c0 || c1 || c2;
+            }
+            return res;
+        });
 
         // Remove triangles in inner circle
-//        triangles.removeIf(t -> {
-//            boolean c0 = t.getAid() == vertices.size() - 1;
-//            boolean c1 = t.getBid() == vertices.size() - 1;
-//            boolean c2 = t.getCid() == vertices.size() - 1;
-//            return c0 || c1 || c2;
-//        });
-
-//        vertices.remove(p0);
-//        vertices.remove(p1);
-//        vertices.remove(p2);
-//        vertices.remove(p3);
+        triangles.removeIf(t -> {
+            boolean c0 = t.getAid() == 4;
+            boolean c1 = t.getBid() == 4;
+            boolean c2 = t.getCid() == 4;
+            return c0 || c1 || c2;
+        });
 
     }
 
+    private void process() {
+
+        purePoints = vertices.stream().skip(5).collect(Collectors.toList());
+
+    }
+    
     private void draw() {
 
         GraphicsContext graphicsContext = canvas.getGraphicsContext2D();
@@ -214,31 +223,26 @@ public class Controller {
         graphicsContext.scale(zoom, zoom);
 
         // Draw triangles
-//        graphicsContext.setStroke(Color.GREEN);
-//        graphicsContext.setLineWidth(2 * (1 / zoom));
-//        for (Triangle t : triangles) {
-//            Point a = vertices.get(t.getAid());
-//            Point b = vertices.get(t.getBid());
-//            Point c = vertices.get(t.getCid());
-//            graphicsContext.strokeLine(a.x(), a.y(), b.x(), b.y());
-//            graphicsContext.strokeLine(b.x(), b.y(), c.x(), c.y());
-//            graphicsContext.strokeLine(c.x(), c.y(), a.x(), a.y());
-//        }
+        graphicsContext.setStroke(Color.GREEN);
+        graphicsContext.setLineWidth(2 * (1 / zoom));
+        for (Triangle t : triangles) {
+            Point3d a = vertices.get(t.getAid());
+            Point3d b = vertices.get(t.getBid());
+            Point3d c = vertices.get(t.getCid());
+            graphicsContext.strokeLine(a.x(), a.y(), b.x(), b.y());
+            graphicsContext.strokeLine(b.x(), b.y(), c.x(), c.y());
+            graphicsContext.strokeLine(c.x(), c.y(), a.x(), a.y());
+        }
 
         // Draw points
         double r = 0.01;
-//        for (Point p : vertices) {
-//            graphicsContext.setFill(p.color());
-//            graphicsContext.fillOval(p.x() - r, p.y() - r, 2 * r, 2 * r);
-//        }
 
-        graphicsContext.setFill(Color.WHITE);
-        for (Point3d p : whitePoints) {
-            graphicsContext.fillOval(p.x() - r, p.y() - r, 2 * r, 2 * r);
-        }
-
-        graphicsContext.setFill(Color.RED);
-        for (Point3d p : edgePoints) {
+        for (Point3d p : purePoints) {
+            if (p.isEdge()) {
+                graphicsContext.setFill(Color.RED);
+            } else {
+                graphicsContext.setFill(Color.WHITE);
+            }
             graphicsContext.fillOval(p.x() - r, p.y() - r, 2 * r, 2 * r);
         }
 
