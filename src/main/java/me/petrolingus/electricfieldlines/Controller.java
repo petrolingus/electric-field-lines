@@ -21,7 +21,7 @@ public class Controller {
     private static final double RADIUS = 0.5;
     private static final double SHIFT = 0.2;
     private static final double ANGLE = 0.5;
-    private static final int N = 32;
+    private static final int N = 48;
 
     private static final double COS135 = -Math.sqrt(2) / 2;
 
@@ -29,10 +29,10 @@ public class Controller {
     public static final List<Point3d> vertices = new ArrayList<>();
 
     public double cx = 0;
-    public double cy = 0;
+    public double cy = 0.3;
     double min = Double.POSITIVE_INFINITY;
     double max = Double.NEGATIVE_INFINITY;
-    double outerQ = 1;
+    double outerQ = 2;
     double innerQ = 0;
 
     public static final List<Point3d> points = new ArrayList<>();
@@ -313,7 +313,11 @@ public class Controller {
         for (int i = 0; i < whitePointsCount; i++) {
             double value = 0;
             for (int j = 0; j < redPointsCount; j++) {
-                value += points.get(j + whitePointsCount).getValue() * A[j][i];
+                if (i == j) {
+
+                } else {
+                    value += points.get(j + whitePointsCount).getValue() * A[j][i];
+                }
             }
             B[i] = value;
         }
@@ -326,15 +330,18 @@ public class Controller {
 
         System.out.println("Sol. Dim: " + solution.getDimension());
 
-        for (int i = 0; i < whitePointsCount; i++) {
-            double value = solution.getEntry(i);
-            if (value < min) {
-                min = value;
-            }
-            if (value > max) {
-                max = value;
-            }
-        }
+//        for (int i = 0; i < whitePointsCount; i++) {
+//            double value = solution.getEntry(i);
+//            if (value < min) {
+//                min = value;
+//            }
+//            if (value > max) {
+//                max = value;
+//            }
+//        }
+
+        min = solution.getMinValue();
+        max = solution.getMaxValue();
 
         System.out.println("MIN: " + min);
         System.out.println("MAX: " + max);
