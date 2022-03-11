@@ -81,4 +81,16 @@ public class Triangle {
     public int getCid() {
         return cid;
     }
+
+    public int getRaid() {
+        return raid;
+    }
+
+    public int getRbid() {
+        return rbid;
+    }
+
+    public int getRcid() {
+        return rcid;
+    }
 }

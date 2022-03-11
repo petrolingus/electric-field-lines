@@ -8,6 +8,7 @@ import me.petrolingus.electricfieldlines.util.Point;
 import me.petrolingus.electricfieldlines.util.Point3d;
 import me.petrolingus.electricfieldlines.util.Triangle;
 
+import javax.swing.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,13 +28,10 @@ public class Controller {
     public static final List<Triangle> triangles = new ArrayList<>();
     public static final List<Point3d> vertices = new ArrayList<>();
 
-    public static final List<Point> points = new ArrayList<>();
     public double cx = 0.2;
     public double cy = 0;
 
-    public static final List<Point3d> whitePoints = new ArrayList<>();
-    public static final List<Point3d> edgePoints = new ArrayList<>();
-    public static List<Point3d> purePoints = new ArrayList<>();
+    public static final List<Point3d> points = new ArrayList<>();
 
     public void initialize() {
         generationOfPoints();
@@ -50,6 +48,8 @@ public class Controller {
         int indexInner135xRight = -1;
         int indexInner135yLeft = -1;
         int indexInner135yRight = -1;
+
+        // Add inner points
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {
                 double x = -1 + j * step;
@@ -62,8 +62,7 @@ public class Controller {
                 boolean isCloseToInnerCircle = Math.abs(RADIUS - d2) < (step / 2);
                 boolean condition = isOuterContain && !isCloseToOuterCircle && !isInnerCircleContain && !isCloseToInnerCircle;
                 if (condition) {
-                    points.add(new Point(x, y, Color.WHITE));
-                    whitePoints.add(new Point3d(x, y, 0));
+                    points.add(new Point3d(x, y, 0));
                 }
                 indexOuter135 = (indexOuter135 == -1 && x > COS135) ? j : indexOuter135;
                 indexInner135xLeft = (indexInner135xLeft == -1 && x > cx + RADIUS * COS135) ? j : indexInner135xLeft;
@@ -73,51 +72,36 @@ public class Controller {
             }
         }
 
-        // Add red points (outer circle)
-        List<Point> redPoints = new ArrayList<>();
+        // Add edge points
         for (int i = indexOuter135; i < N - indexOuter135; i++) {
             double a = -1 + i * step;
             double b = Math.sqrt(1 - a * a);
-            redPoints.add(new Point(a, -b, Color.RED));
-            redPoints.add(new Point(a, b, Color.RED));
-            redPoints.add(new Point(b, a, Color.RED));
-            redPoints.add(new Point(-b, a, Color.RED));
-            edgePoints.add(new Point3d(a, -b, 0));
-            edgePoints.add(new Point3d(a, b, 0));
-            edgePoints.add(new Point3d(b, a, 0));
-            edgePoints.add(new Point3d(-b, a, 0));
+            points.add(new Point3d(a, -b, 0, true));
+            points.add(new Point3d(a, b, 0, true));
+            points.add(new Point3d(b, a, 0, true));
+            points.add(new Point3d(-b, a, 0, true));
         }
-
-        // Add blue points (inner circle)
-        List<Point> bluePoints = new ArrayList<>();
         for (int i = indexInner135xLeft; i < indexInner135xRight; i++) {
             double a = -1 + i * step;
             double b = Math.sqrt(RADIUS * RADIUS - (a - cx) * (a - cx));
-            bluePoints.add(new Point(a, -b + cy, Color.BLUE));
-            bluePoints.add(new Point(a, b + cy, Color.BLUE));
-            edgePoints.add(new Point3d(a, -b + cy, 0));
-            edgePoints.add(new Point3d(a, b + cy, 0));
+            points.add(new Point3d(a, -b + cy, 0, true));
+            points.add(new Point3d(a, b + cy, 0, true));
         }
         for (int i = indexInner135yLeft; i < indexInner135yRight; i++) {
             double a = -1 + i * step;
             double b = Math.sqrt(RADIUS * RADIUS - (a - cy) * (a - cy));
-            bluePoints.add(new Point(b + cx, a, Color.BLUE));
-            bluePoints.add(new Point(-b + cx, a, Color.BLUE));
-            edgePoints.add(new Point3d(b + cx, a, 0));
-            edgePoints.add(new Point3d(-b + cx, a, 0));
+            points.add(new Point3d(b + cx, a, 0, true));
+            points.add(new Point3d(-b + cx, a, 0, true));
         }
-
-        points.addAll(redPoints);
-        points.addAll(bluePoints);
     }
 
-    private void methodBowerWatson(double x, double y, boolean isEdge) {
+    private void methodBowerWatson(Point3d point3d) {
 
-        vertices.add(new Point3d(x, y, 0, isEdge));
+        vertices.add(point3d);
 
         List<Integer> badTriangles = new ArrayList<>();
         for (int i = 0; i < triangles.size(); i++) {
-            if (triangles.get(i).isContain(x, y)) {
+            if (triangles.get(i).isContain(point3d.x(), point3d.y())) {
                 badTriangles.add(i);
                 triangles.get(i).setBad(true);
             }
@@ -158,6 +142,7 @@ public class Controller {
         Point3d p1 = new Point3d(1, -1, 0);
         Point3d p2 = new Point3d(1, 1, 0);
         Point3d p3 = new Point3d(-1, 1, 0);
+        Point3d p4 = new Point3d(cx, cy, 0);
 
         vertices.add(p0);
         vertices.add(p1);
@@ -167,18 +152,10 @@ public class Controller {
         triangles.add(new Triangle(0, 1, 2));
         triangles.add(new Triangle(0, 2, 3));
 
-        methodBowerWatson(cx, cy, false);
+        methodBowerWatson(p4);
 
-        for (Point3d p : whitePoints) {
-            double x = p.x();
-            double y = p.y();
-            methodBowerWatson(x, y, false);
-        }
-
-        for (Point3d p : edgePoints) {
-            double x = p.x();
-            double y = p.y();
-            methodBowerWatson(x, y, true);
+        for (Point3d p : points) {
+            methodBowerWatson(p);
         }
 
         // Remove super-structure triangles
@@ -205,7 +182,56 @@ public class Controller {
 
     private void process() {
 
-        purePoints = vertices.stream().skip(5).collect(Collectors.toList());
+        System.out.println("Triangles:" + triangles.size());
+        System.out.println("Points:" + points.size());
+
+        int whitePointsCount = 0;
+        for (Point3d p : points) {
+            if (!p.isEdge()) {
+                whitePointsCount++;
+            }
+        }
+        System.out.println("WhitePoints:" + whitePointsCount);
+
+        int redPointsCount = points.size() - whitePointsCount;
+        System.out.println("RedPoints:" + redPointsCount);
+
+        for (int i = 0; i < points.size(); i++) {
+            List<Integer> dependencyTriangles = new ArrayList<>();
+            for (int j = 0; j < triangles.size(); j++) {
+                Triangle t = triangles.get(j);
+                int indexV0 = t.getRaid();
+                int indexV1 = t.getRbid();
+                int indexV2 = t.getRcid();
+                boolean cond = (i == indexV0) || (i == indexV1) || (i == indexV2);
+                if (cond) {
+                    dependencyTriangles.add(j);
+                }
+            }
+            points.get(i).setTriangleList(dependencyTriangles);
+        }
+
+        double[][] A = new double[whitePointsCount][whitePointsCount];
+
+        for (int i = 0; i < whitePointsCount; i++) {
+            Point3d p0 = points.get(i);
+            List<Integer> n0 = p0.getTriangleList();
+            for (int j = 0; j < whitePointsCount; j++) {
+                Point3d p1 = points.get(j);
+                List<Integer> n1 = p1.getTriangleList();
+
+                boolean isNeighbours = false;
+                for (Integer index0 : n0) {
+                    for (Integer index1 : n1) {
+                        isNeighbours |= index0.equals(index1);
+                    }
+                }
+
+                if (isNeighbours) {
+
+                }
+            }
+        }
 
     }
     
@@ -226,9 +252,9 @@ public class Controller {
         graphicsContext.setStroke(Color.GREEN);
         graphicsContext.setLineWidth(2 * (1 / zoom));
         for (Triangle t : triangles) {
-            Point3d a = vertices.get(t.getAid());
-            Point3d b = vertices.get(t.getBid());
-            Point3d c = vertices.get(t.getCid());
+            Point3d a = points.get(t.getRaid());
+            Point3d b = points.get(t.getRbid());
+            Point3d c = points.get(t.getRcid());
             graphicsContext.strokeLine(a.x(), a.y(), b.x(), b.y());
             graphicsContext.strokeLine(b.x(), b.y(), c.x(), c.y());
             graphicsContext.strokeLine(c.x(), c.y(), a.x(), a.y());
@@ -237,7 +263,7 @@ public class Controller {
         // Draw points
         double r = 0.01;
 
-        for (Point3d p : purePoints) {
+        for (Point3d p : points) {
             if (p.isEdge()) {
                 graphicsContext.setFill(Color.RED);
             } else {
