@@ -29,10 +29,10 @@ public class Controller {
     public static final List<Point3d> vertices = new ArrayList<>();
 
     public double cx = 0;
-    public double cy = 0.3;
+    public double cy = -0.35;
     double min = Double.POSITIVE_INFINITY;
     double max = Double.NEGATIVE_INFINITY;
-    double outerQ = 2;
+    double outerQ = 1;
     double innerQ = 0;
 
     public static final List<Point3d> points = new ArrayList<>();
@@ -287,6 +287,7 @@ public class Controller {
 
                     if (!neighTrianglesIndices.isEmpty()) {
 
+                        // USE FOR DEBUG
                         if (neighTrianglesIndices.size() != 2) {
                             System.err.println("WFT!!");
                             System.exit(-1);
@@ -330,16 +331,6 @@ public class Controller {
 
         System.out.println("Sol. Dim: " + solution.getDimension());
 
-//        for (int i = 0; i < whitePointsCount; i++) {
-//            double value = solution.getEntry(i);
-//            if (value < min) {
-//                min = value;
-//            }
-//            if (value > max) {
-//                max = value;
-//            }
-//        }
-
         min = solution.getMinValue();
         max = solution.getMaxValue();
 
@@ -347,13 +338,13 @@ public class Controller {
         System.out.println("MAX: " + max);
 
         for (int i = 0; i < whitePointsCount; i++) {
-            double value = valueMapper(solution.getEntry(i), min, max, 0, 1);
+            double value = valueMapper(solution.getEntry(i), min, max);
             points.get(i).setValue(value);
         }
     }
 
-    double valueMapper(double value,double smin,double smax,double dmin, double dmax) {
-        return ((value-smin) / (smax-smin)) * (dmax-dmin) + dmin;
+    double valueMapper(double value, double min, double max) {
+        return ((value - min) / (max - min));
     }
     
     private void draw() {
