@@ -110,25 +110,31 @@ public class Triangle {
             c = new Point3d(c.x, c.y, 1.0);
         }
 
+        // USE FOR DEBUG
+        if (a.z == 0 && b.z == 0 && c.z == 0) {
+            System.err.println("ALL TRIANGLES IN ONE PLANE!!!!!");
+            System.exit(-1);
+        }
+
         Vector3D v0 = new Vector3D(b.x - a.x, b.y - a.y, b.z - a.z);
         Vector3D v1 = new Vector3D(c.x - a.x, c.y - a.y, c.z - a.z);
         Vector3D vector3D = v0.crossProduct(v1);
         double S = vector3D.getNorm() / 2.0;
 
-        double a01 = b.x - a.x;
-        double a02 = c.x - a.x;
+//        double a01 = b.x - a.x;
+//        double a02 = c.x - a.x;
+//
+//        double a11 = b.y - a.y;
+//        double a12 = c.y - a.y;
+//
+//        double a21 = b.z - a.z;
+//        double a22 = c.z - a.z;
+//
+//        double A = a11 * a22 - a21 * a12;
+//        double B = -(a01 * a22 - a21 * a02);
 
-        double a11 = b.y - a.y;
-        double a12 = c.y - a.y;
-
-        double a21 = b.z - a.z;
-        double a22 = c.z - a.z;
-
-        double A = a11 * a22 - a21 * a12;
-        double B = -(a01 * a22 - a21 * a02);
-
-//        double A = vector3D.getX();
-//        double B = vector3D.getY();
+        double A = vector3D.getX();
+        double B = vector3D.getY();
 
         return new double[]{A, B, S};
     }

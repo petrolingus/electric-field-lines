@@ -4,17 +4,14 @@ import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
-import me.petrolingus.electricfieldlines.util.Point;
 import me.petrolingus.electricfieldlines.util.Point3d;
 import me.petrolingus.electricfieldlines.util.Triangle;
 import org.apache.commons.math3.linear.*;
 
-import javax.swing.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class Controller {
 
@@ -255,6 +252,12 @@ public class Controller {
         // WHAT THE FUCK HAPPEN THESE
         double[][] A = new double[whitePointsCount][whitePointsCount];
         for (int i = 0; i < whitePointsCount; i++) {
+            for (int j = 0; j < whitePointsCount; j++) {
+                A[i][j] = 0;
+            }
+        }
+
+        for (int i = 0; i < whitePointsCount; i++) {
             Point3d p0 = points.get(i);
             List<Integer> n0 = p0.getTriangleList();
             for (int j = 0; j < whitePointsCount; j++) {
@@ -270,7 +273,7 @@ public class Controller {
                         double valueS = ABS[2];
                         value += (valueA * valueA + valueB * valueB) * valueS;
                     }
-                    A[i][j] = -value;
+                    A[i][j] = value;
 
                 } else {
                     Set<Integer> neighTrianglesIndices = new HashSet<>();
@@ -294,9 +297,8 @@ public class Controller {
                             double[] ABSi = triangles.get(triangleIndex).magicCalc(i);
                             double[] ABSj = triangles.get(triangleIndex).magicCalc(j);
                             value += (ABSi[0] * ABSj[0] + ABSi[1] * ABSj[1]) * ABSi[2];
-//                            value += (ABSi[0] * ABSj[0] + ABSj[1] * ABSj[1]) * ABSj[2];
                         }
-                        A[i][j] = -value;
+                        A[i][j] = value;
 
                     } else {
                         A[i][j] = 0;
@@ -311,7 +313,7 @@ public class Controller {
         for (int i = 0; i < whitePointsCount; i++) {
             double value = 0;
             for (int j = 0; j < redPointsCount; j++) {
-                value += points.get(j + whitePointsCount).getValue() * A[j][i];
+                value += points.get(j + whitePointsCount).getValue() * A[j][i] * (-1);
             }
             B[i] = value;
         }
@@ -321,6 +323,8 @@ public class Controller {
 
         RealVector constants = new ArrayRealVector(B, false);
         RealVector solution = solver.solve(constants);
+
+        System.out.println("Sol. Dim: " + solution.getDimension());
 
         for (int i = 0; i < whitePointsCount; i++) {
             double value = solution.getEntry(i);
@@ -336,8 +340,7 @@ public class Controller {
         System.out.println("MAX: " + max);
 
         for (int i = 0; i < whitePointsCount; i++) {
-            double value = valueMapper(Math.abs(solution.getEntry(i)), min, max, 0, 1);
-            // System.out.println(value);
+            double value = valueMapper(solution.getEntry(i), min, max, 0, 1);
             points.get(i).setValue(value);
         }
     }
@@ -378,6 +381,18 @@ public class Controller {
             graphicsContext.setFill(Color.WHITE.interpolate(Color.RED, p.getValue()));
             graphicsContext.fillOval(p.x() - r, p.y() - r, 2 * r, 2 * r);
         }
+
+//        for (int i = 0; i < points.size(); i++) {
+//            Point3d p = points.get(i);
+//            graphicsContext.setFill(Color.WHITE);
+//            graphicsContext.fillOval(p.x() - r, p.y() - r, 2 * r, 2 * r);
+//        }
+//
+//        for (int i = 0; i < 508; i++) {
+//            Point3d p = points.get(i);
+//            graphicsContext.setFill(Color.RED);
+//            graphicsContext.fillOval(p.x() - r, p.y() - r, 2 * r, 2 * r);
+//        }
 
         graphicsContext.restore();
 
