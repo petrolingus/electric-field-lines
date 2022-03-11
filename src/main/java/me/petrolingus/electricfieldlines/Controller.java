@@ -1,18 +1,12 @@
 package me.petrolingus.electricfieldlines;
 
-import javafx.animation.Animation;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Label;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
-import javafx.util.Duration;
 
-import java.awt.event.MouseListener;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Controller {
 
