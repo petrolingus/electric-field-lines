@@ -1,6 +1,7 @@
 package me.petrolingus.electricfieldlines.util;
 
 import me.petrolingus.electricfieldlines.Controller;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import java.util.List;
 
@@ -92,5 +93,38 @@ public class Triangle {
 
     public int getRcid() {
         return rcid;
+    }
+
+    public double[] magicCalc(int index) {
+
+        Point3d a = Controller.points.get(raid);
+        Point3d b = Controller.points.get(rbid);
+        Point3d c = Controller.points.get(rcid);
+
+        if (index == raid) {
+            a = new Point3d(a.x, a.y, 1.0);
+        } else if (index == rbid) {
+            b = new Point3d(b.x, b.y, 1.0);
+        } else if (index == rcid) {
+            c = new Point3d(c.x, c.y, 1.0);
+        }
+
+        double a01 = b.x - a.x;
+        double a02 = c.x - a.x;
+
+        double a11 = b.y - a.y;
+        double a12 = c.y - a.y;
+
+        double a21 = b.z - a.z;
+        double a22 = c.z - a.z;
+
+        double A = a11 * a22 - a21 * a12;
+        double B = -(a01 * a22 - a21 * a02);
+
+        Vector3D v0 = new Vector3D(b.x - a.x, b.y - a.y, b.z - a.z);
+        Vector3D v1 = new Vector3D(c.x - a.x, c.y - a.y, c.z - a.z);
+        double S = v0.dotProduct(v1) / 2.0;
+
+        return new double[] {A, B, S};
     }
 }

@@ -7,6 +7,7 @@ import javafx.scene.paint.Color;
 import me.petrolingus.electricfieldlines.util.Point;
 import me.petrolingus.electricfieldlines.util.Point3d;
 import me.petrolingus.electricfieldlines.util.Triangle;
+import org.apache.commons.math3.linear.*;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -72,26 +73,28 @@ public class Controller {
             }
         }
 
-        // Add edge points
+        // Add outer edge points
         for (int i = indexOuter135; i < N - indexOuter135; i++) {
             double a = -1 + i * step;
             double b = Math.sqrt(1 - a * a);
-            points.add(new Point3d(a, -b, 0, true));
-            points.add(new Point3d(a, b, 0, true));
-            points.add(new Point3d(b, a, 0, true));
-            points.add(new Point3d(-b, a, 0, true));
+            points.add(new Point3d(a, -b, 0, true, 1));
+            points.add(new Point3d(a, b, 0, true, 1));
+            points.add(new Point3d(b, a, 0, true, 1));
+            points.add(new Point3d(-b, a, 0, true, 1));
         }
+
+        // Add inner edge points
         for (int i = indexInner135xLeft; i < indexInner135xRight; i++) {
             double a = -1 + i * step;
             double b = Math.sqrt(RADIUS * RADIUS - (a - cx) * (a - cx));
-            points.add(new Point3d(a, -b + cy, 0, true));
-            points.add(new Point3d(a, b + cy, 0, true));
+            points.add(new Point3d(a, -b + cy, 0, true, 0));
+            points.add(new Point3d(a, b + cy, 0, true, 0));
         }
         for (int i = indexInner135yLeft; i < indexInner135yRight; i++) {
             double a = -1 + i * step;
             double b = Math.sqrt(RADIUS * RADIUS - (a - cy) * (a - cy));
-            points.add(new Point3d(b + cx, a, 0, true));
-            points.add(new Point3d(-b + cx, a, 0, true));
+            points.add(new Point3d(b + cx, a, 0, true, 0));
+            points.add(new Point3d(-b + cx, a, 0, true, 0));
         }
     }
 
@@ -211,8 +214,8 @@ public class Controller {
             points.get(i).setTriangleList(dependencyTriangles);
         }
 
+        // WHAT THE FUCK HAPPEN THESE
         double[][] A = new double[whitePointsCount][whitePointsCount];
-
         for (int i = 0; i < whitePointsCount; i++) {
             Point3d p0 = points.get(i);
             List<Integer> n0 = p0.getTriangleList();
@@ -220,19 +223,67 @@ public class Controller {
                 Point3d p1 = points.get(j);
                 List<Integer> n1 = p1.getTriangleList();
 
-                boolean isNeighbours = false;
+                List<Integer> neighTrianglesIndices = new ArrayList<>();
+
                 for (Integer index0 : n0) {
                     for (Integer index1 : n1) {
-                        isNeighbours |= index0.equals(index1);
+                        if (index0.equals(index1)) {
+                            neighTrianglesIndices.add(index0);
+                        }
                     }
                 }
 
-                if (isNeighbours) {
+                if (!neighTrianglesIndices.isEmpty()) {
+                    double value = 0;
+                    for (Integer triangleIndex : neighTrianglesIndices) {
+                        double[] ABSi = triangles.get(triangleIndex).magicCalc(i);
+                        double[] ABSj = triangles.get(triangleIndex).magicCalc(j);
+                        value += (ABSi[0] * ABSi[0] + ABSi[1] * ABSi[1]) * ABSi[2];
+                        value += (ABSj[0] * ABSj[0] + ABSj[1] * ABSj[1]) * ABSj[2];
+                    }
+                    A[i][j] = -value;
 
+                } else if (i == j) {
+                    double value = 0;
+                    for (Integer triangleIndex : n0) {
+                        double[] ABS = triangles.get(triangleIndex).magicCalc(i);
+                        double valueA = ABS[0];
+                        double valueB = ABS[1];
+                        double valueS = ABS[2];
+                        value += (valueA * valueA + valueB * valueB) * valueS;
+                    }
+                    A[i][j] = -value;
+
+                } else {
+                    A[i][j] = 0;
                 }
+
             }
         }
 
+        double[] B = new double[whitePointsCount];
+        for (int i = 0; i < whitePointsCount; i++) {
+            double value = 0;
+            for (int j = 0; j < redPointsCount; j++) {
+                value += points.get(j + whitePointsCount).getValue() * A[j][i];
+            }
+            B[i] = value;
+        }
+
+        RealMatrix coefficients = new Array2DRowRealMatrix(A, false);
+        DecompositionSolver solver = new LUDecomposition(coefficients).getSolver();
+
+        RealVector constants = new ArrayRealVector(B, false);
+        RealVector solution = solver.solve(constants);
+
+        for (int i = 0; i < whitePointsCount; i++) {
+            System.out.println(solution.getEntry(i));
+        }
+
+        for (int i = 0; i < whitePointsCount; i++) {
+            double value = solution.getEntry(i);
+            points.get(i).setValue(value);
+        }
     }
     
     private void draw() {
@@ -250,7 +301,7 @@ public class Controller {
 
         // Draw triangles
         graphicsContext.setStroke(Color.GREEN);
-        graphicsContext.setLineWidth(2 * (1 / zoom));
+        graphicsContext.setLineWidth(0.5 * (1 / zoom));
         for (Triangle t : triangles) {
             Point3d a = points.get(t.getRaid());
             Point3d b = points.get(t.getRbid());
@@ -264,11 +315,12 @@ public class Controller {
         double r = 0.01;
 
         for (Point3d p : points) {
-            if (p.isEdge()) {
-                graphicsContext.setFill(Color.RED);
-            } else {
-                graphicsContext.setFill(Color.WHITE);
-            }
+//            if (p.isEdge()) {
+//                graphicsContext.setFill(Color.RED);
+//            } else {
+//                graphicsContext.setFill(Color.WHITE);
+//            }
+            graphicsContext.setFill(Color.WHITE.interpolate(Color.RED, Math.abs(p.getValue())));
             graphicsContext.fillOval(p.x() - r, p.y() - r, 2 * r, 2 * r);
         }
 

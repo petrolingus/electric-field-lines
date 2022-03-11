@@ -11,6 +11,8 @@ public class Point3d {
 
     boolean isEdge = false;
 
+    double value = 0;
+
     List<Integer> triangleList;
 
     public Point3d(double x, double y, double z) {
@@ -18,10 +20,15 @@ public class Point3d {
     }
 
     public Point3d(double x, double y, double z, boolean isEdge) {
+        this(x, y, z, isEdge, 0);
+    }
+
+    public Point3d(double x, double y, double z, boolean isEdge, double value) {
         this.x = x;
         this.y = y;
         this.z = z;
         this.isEdge = isEdge;
+        this.value = value;
     }
 
     double mod() {
@@ -54,5 +61,25 @@ public class Point3d {
 
     public List<Integer> getTriangleList() {
         return triangleList;
+    }
+
+    public void setX(double x) {
+        this.x = x;
+    }
+
+    public void setY(double y) {
+        this.y = y;
+    }
+
+    public void setZ(double z) {
+        this.z = z;
+    }
+
+    public double getValue() {
+        return value;
+    }
+
+    public void setValue(double value) {
+        this.value = value;
     }
 }
