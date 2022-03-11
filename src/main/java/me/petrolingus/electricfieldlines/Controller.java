@@ -66,7 +66,7 @@ public class Controller {
         public boolean isContain(double x, double y) {
             double dx = cx - x;
             double dy = cy - y;
-            return Math.sqrt(dx * dx + dy * dy) < this.r;
+            return this.r - Math.sqrt(dx * dx + dy * dy) > 1e-10;
         }
 
         public List<List<Integer>> getEdges() {
@@ -282,7 +282,7 @@ public class Controller {
 
         // Draw points
         double r = 0.01;
-        for (Point p : points) {
+        for (Point p : vertices) {
             graphicsContext.setFill(p.color);
             graphicsContext.fillOval(p.x - r, p.y - r, 2 * r, 2 * r);
         }
