@@ -273,7 +273,7 @@ public class Controller {
                         double valueS = ABS[2];
                         value += (valueA * valueA + valueB * valueB) * valueS;
                     }
-                    A[i][j] = value;
+                    A[i][j] = -value;
 
                 } else {
                     Set<Integer> neighTrianglesIndices = new HashSet<>();
@@ -298,7 +298,7 @@ public class Controller {
                             double[] ABSj = triangles.get(triangleIndex).magicCalc(j);
                             value += (ABSi[0] * ABSj[0] + ABSi[1] * ABSj[1]) * ABSi[2];
                         }
-                        A[i][j] = value;
+                        A[i][j] = -value;
 
                     } else {
                         A[i][j] = 0;
@@ -313,7 +313,7 @@ public class Controller {
         for (int i = 0; i < whitePointsCount; i++) {
             double value = 0;
             for (int j = 0; j < redPointsCount; j++) {
-                value += points.get(j + whitePointsCount).getValue() * A[j][i] * (-1);
+                value += points.get(j + whitePointsCount).getValue() * A[j][i];
             }
             B[i] = value;
         }
