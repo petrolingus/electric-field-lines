@@ -22,6 +22,7 @@ public class Controller {
     private static final double SHIFT = 0.2;
     private static final double ANGLE = 0.5;
     private static final int N = 48;
+    private static final boolean SHOW_TRIANGULATION = true;
 
     private static final double COS135 = -Math.sqrt(2) / 2;
 
@@ -218,38 +219,38 @@ public class Controller {
             points.get(i).setTriangleList(dependencyTriangles);
         }
 
-        // USES FOR DEBUG NEIGHBOURS
-//        for (int i = 0; i < triangles.size(); i++) {
-//            Triangle t = triangles.get(i);
-//            int a = t.getRaid();
-//            int b = t.getRbid();
-//            int c = t.getRcid();
-//
-//            Point3d p0 = points.get(a);
-//            boolean cond0 = false;
-//            for (Integer index0 : p0.getTriangleList()) {
-//                cond0 |= index0 == i;
-//            }
-//
-//            Point3d p1 = points.get(b);
-//            boolean cond1 = false;
-//            for (Integer index0 : p1.getTriangleList()) {
-//                cond1 |= index0 == i;
-//            }
-//
-//            Point3d p2 = points.get(c);
-//            boolean cond2 = false;
-//            for (Integer index0 : p2.getTriangleList()) {
-//                cond2 |= index0 == i;
-//            }
-//
-//            if (!(cond0 && cond1 && cond2)) {
-//                System.err.println("WRONHG!!!");
-//                System.exit(-1);
-//            }
-//        }
+        // USE FOR DEBUG NEIGHBOURS
+        for (int i = 0; i < triangles.size(); i++) {
+            Triangle t = triangles.get(i);
+            int a = t.getRaid();
+            int b = t.getRbid();
+            int c = t.getRcid();
 
-        // WHAT THE FUCK HAPPEN THESE
+            Point3d p0 = points.get(a);
+            boolean cond0 = false;
+            for (Integer index0 : p0.getTriangleList()) {
+                cond0 |= index0 == i;
+            }
+
+            Point3d p1 = points.get(b);
+            boolean cond1 = false;
+            for (Integer index0 : p1.getTriangleList()) {
+                cond1 |= index0 == i;
+            }
+
+            Point3d p2 = points.get(c);
+            boolean cond2 = false;
+            for (Integer index0 : p2.getTriangleList()) {
+                cond2 |= index0 == i;
+            }
+
+            if (!(cond0 && cond1 && cond2)) {
+                System.err.println("WRONG NEIGHBOURS!");
+                System.exit(-1);
+            }
+        }
+
+        // WHAT THE FAQ HAPPEN THESE
         double[][] A = new double[whitePointsCount][whitePointsCount];
         for (int i = 0; i < whitePointsCount; i++) {
             for (int j = 0; j < whitePointsCount; j++) {
@@ -289,7 +290,7 @@ public class Controller {
 
                         // USE FOR DEBUG
                         if (neighTrianglesIndices.size() != 2) {
-                            System.err.println("WFT!!");
+                            System.err.println("TWO POINTS HAS NEIGHBOUR TRIANGLES NOT EQUAL TWO!");
                             System.exit(-1);
                         }
 
@@ -361,36 +362,25 @@ public class Controller {
         graphicsContext.scale(zoom, zoom);
 
         // Draw triangles
-//        graphicsContext.setStroke(Color.GREEN);
-//        graphicsContext.setLineWidth(0.5 * (1 / zoom));
-//        for (Triangle t : triangles) {
-//            Point3d a = points.get(t.getRaid());
-//            Point3d b = points.get(t.getRbid());
-//            Point3d c = points.get(t.getRcid());
-//            graphicsContext.strokeLine(a.x(), a.y(), b.x(), b.y());
-//            graphicsContext.strokeLine(b.x(), b.y(), c.x(), c.y());
-//            graphicsContext.strokeLine(c.x(), c.y(), a.x(), a.y());
-//        }
+        if (SHOW_TRIANGULATION) {
+            graphicsContext.setStroke(Color.GREEN);
+            graphicsContext.setLineWidth(0.5 * (1 / zoom));
+            for (Triangle t : triangles) {
+                Point3d a = points.get(t.getRaid());
+                Point3d b = points.get(t.getRbid());
+                Point3d c = points.get(t.getRcid());
+                graphicsContext.strokeLine(a.x(), a.y(), b.x(), b.y());
+                graphicsContext.strokeLine(b.x(), b.y(), c.x(), c.y());
+                graphicsContext.strokeLine(c.x(), c.y(), a.x(), a.y());
+            }
+        }
 
         // Draw points
         double r = 0.01;
-
         for (Point3d p : points) {
             graphicsContext.setFill(Color.WHITE.interpolate(Color.RED, p.getValue()));
             graphicsContext.fillOval(p.x() - r, p.y() - r, 2 * r, 2 * r);
         }
-
-//        for (int i = 0; i < points.size(); i++) {
-//            Point3d p = points.get(i);
-//            graphicsContext.setFill(Color.WHITE);
-//            graphicsContext.fillOval(p.x() - r, p.y() - r, 2 * r, 2 * r);
-//        }
-//
-//        for (int i = 0; i < 508; i++) {
-//            Point3d p = points.get(i);
-//            graphicsContext.setFill(Color.RED);
-//            graphicsContext.fillOval(p.x() - r, p.y() - r, 2 * r, 2 * r);
-//        }
 
         graphicsContext.restore();
 

@@ -2,7 +2,6 @@ package me.petrolingus.electricfieldlines.util;
 
 import me.petrolingus.electricfieldlines.Controller;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math3.linear.*;
 
 import java.util.List;
 
@@ -20,7 +19,7 @@ public class Triangle {
     private double cy;
     private double r;
 
-    private boolean isBad = false;
+    private boolean isBad;
 
     public Triangle(int aid, int bid, int cid) {
         this.aid = aid;
@@ -103,21 +102,21 @@ public class Triangle {
         Point3d c = Controller.points.get(rcid);
 
         if (index == raid) {
-            a = new Point3d(a.x, a.y, 1.0);
+            a = new Point3d(a.x(), a.y(), 1.0);
         } else if (index == rbid) {
-            b = new Point3d(b.x, b.y, 1.0);
+            b = new Point3d(b.x(), b.y(), 1.0);
         } else if (index == rcid) {
-            c = new Point3d(c.x, c.y, 1.0);
+            c = new Point3d(c.x(), c.y(), 1.0);
         }
 
         // USE FOR DEBUG
-        if (a.z == 0 && b.z == 0 && c.z == 0) {
+        if (a.z() == 0 && b.z() == 0 && c.z() == 0) {
             System.err.println("ALL TRIANGLES IN ONE PLANE!!!!!");
             System.exit(-1);
         }
 
-        Vector3D v0 = new Vector3D(b.x - a.x, b.y - a.y, b.z - a.z);
-        Vector3D v1 = new Vector3D(c.x - a.x, c.y - a.y, c.z - a.z);
+        Vector3D v0 = new Vector3D(b.x() - a.x(), b.y() - a.y(), b.z() - a.z());
+        Vector3D v1 = new Vector3D(c.x() - a.x(), c.y() - a.y(), c.z() - a.z());
         Vector3D vector3D = v0.crossProduct(v1);
         double S = vector3D.getNorm() / 2.0;
 
