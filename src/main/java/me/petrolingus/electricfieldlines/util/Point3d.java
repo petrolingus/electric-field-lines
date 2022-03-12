@@ -1,26 +1,19 @@
 package me.petrolingus.electricfieldlines.util;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class Point3d {
 
-    double x;
-    double y;
-    double z;
+    private final double x;
+    private final double y;
+    private final double z;
+    private final boolean isEdge;
 
-    boolean isEdge = false;
-
-    double value = 0;
-
-    List<Integer> triangleList;
+    private double value;
+    private List<Integer> triangleList;
 
     public Point3d(double x, double y, double z) {
-        this(x, y, z, false);
-    }
-
-    public Point3d(double x, double y, double z, boolean isEdge) {
-        this(x, y, z, isEdge, 0);
+        this(x, y, z, false, 0);
     }
 
     public Point3d(double x, double y, double z, boolean isEdge, double value) {
@@ -32,7 +25,7 @@ public class Point3d {
     }
 
     double mod() {
-        return x * x + y * y;
+        return x * x + y * y + z * z;
     }
 
     public double x() {
@@ -51,35 +44,19 @@ public class Point3d {
         return isEdge;
     }
 
-    public void setEdge(boolean edge) {
-        isEdge = edge;
-    }
-
-    public void setTriangleList(List<Integer> triangleList) {
-        this.triangleList = triangleList;
-    }
-
-    public List<Integer> getTriangleList() {
-        return triangleList;
-    }
-
-    public void setX(double x) {
-        this.x = x;
-    }
-
-    public void setY(double y) {
-        this.y = y;
-    }
-
-    public void setZ(double z) {
-        this.z = z;
-    }
-
     public double getValue() {
         return value;
     }
 
     public void setValue(double value) {
         this.value = value;
+    }
+
+    public List<Integer> getTriangleList() {
+        return List.copyOf(triangleList);
+    }
+
+    public void setTriangleList(List<Integer> triangleList) {
+        this.triangleList = List.copyOf(triangleList);
     }
 }
