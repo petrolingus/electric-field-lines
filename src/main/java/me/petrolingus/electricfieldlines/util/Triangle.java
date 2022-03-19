@@ -1,5 +1,6 @@
 package me.petrolingus.electricfieldlines.util;
 
+import javafx.scene.paint.Color;
 import me.petrolingus.electricfieldlines.Controller;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
@@ -20,6 +21,8 @@ public class Triangle {
     private double r;
 
     private boolean isBad;
+
+    public Color neighColor;
 
     public Triangle(int aid, int bid, int cid) {
         this.aid = aid;
@@ -103,10 +106,16 @@ public class Triangle {
 
         if (index == raid) {
             a = new Point3d(a.x(), a.y(), 1.0);
+            b = new Point3d(b.x(), b.y(), b.y());
+            c = new Point3d(c.x(), c.y(), c.y());
         } else if (index == rbid) {
-            b = new Point3d(b.x(), b.y(), 1.0);
+            a = new Point3d(b.x(), b.y(), 1.0);
+            b = new Point3d(a.x(), a.y(), a.y());
+            c = new Point3d(c.x(), c.y(), c.y());
         } else if (index == rcid) {
-            c = new Point3d(c.x(), c.y(), 1.0);
+            a = new Point3d(c.x(), c.y(), 1.0);
+            b = new Point3d(b.x(), b.y(), b.y());
+            c = new Point3d(a.x(), a.y(), a.y());
         }
 
         // USE FOR DEBUG
@@ -115,10 +124,10 @@ public class Triangle {
             System.exit(-1);
         }
 
-        Vector3D v0 = new Vector3D(b.x() - a.x(), b.y() - a.y(), b.z() - a.z());
-        Vector3D v1 = new Vector3D(c.x() - a.x(), c.y() - a.y(), c.z() - a.z());
-        Vector3D vector3D = v0.crossProduct(v1);
-        double S = vector3D.getNorm() / 2.0;
+//        Vector3D v0 = new Vector3D(b.x() - a.x(), b.y() - a.y(), b.z() - a.z());
+//        Vector3D v1 = new Vector3D(c.x() - a.x(), c.y() - a.y(), c.z() - a.z());
+//        Vector3D vector3D = v0.crossProduct(v1);
+//        double S = vector3D.getNorm() / 2.0;
 
 //        double a01 = b.x - a.x;
 //        double a02 = c.x - a.x;
@@ -132,8 +141,16 @@ public class Triangle {
 //        double A = a11 * a22 - a21 * a12;
 //        double B = -(a01 * a22 - a21 * a02);
 
-        double A = vector3D.getX();
-        double B = vector3D.getY();
+//        double A = vector3D.getX();
+//        double B = vector3D.getY();
+
+        Vector3D p1 = new Vector3D(a.x(), a.y(), a.z());
+        Vector3D p2 = new Vector3D(b.x(), b.y(), b.z());
+        Vector3D p3 = new Vector3D(c.x(), c.y(), c.z());
+
+        double A = (p2.getY() - p1.getY()) * (-1) - (p3.getY() - p1.getY()) * (-1);
+        double B = (p2.getX() - p1.getX()) - (p3.getX() - p1.getX());
+        double S = Math.abs((p2.getX() - p1.getX()) * (p3.getY() - p1.getY()) - (p2.getY() - p1.getY()) * (p3.getX() - p1.getX())) / 2;
 
         return new double[]{A, B, S};
     }

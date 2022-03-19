@@ -8,33 +8,32 @@ import me.petrolingus.electricfieldlines.util.Point3d;
 import me.petrolingus.electricfieldlines.util.Triangle;
 import org.apache.commons.math3.linear.*;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class Controller {
 
     @FXML
     private Canvas canvas;
 
-    private static final double RADIUS = 0.5;
+    private static final double RADIUS = 0.3;
     private static final double SHIFT = 0.2;
     private static final double ANGLE = 0.5;
-    private static final int N = 48;
-    private static final boolean SHOW_TRIANGULATION = true;
+    private static final int N = 32;
+    private static final boolean SHOW_TRIANGULATION = false;
 
     private static final double COS135 = -Math.sqrt(2) / 2;
 
     public static final List<Triangle> triangles = new ArrayList<>();
     public static final List<Point3d> vertices = new ArrayList<>();
 
-    public double cx = 0;
-    public double cy = -0.35;
+    public double cx = 0.1;
+    public double cy = 0.45;
     double min = Double.POSITIVE_INFINITY;
     double max = Double.NEGATIVE_INFINITY;
-    double outerQ = 1;
-    double innerQ = 0;
+    double outerQ = 9;
+    double innerQ = -9;
+
+    Random random = new Random();
 
     public static final List<Point3d> points = new ArrayList<>();
 
@@ -253,60 +252,118 @@ public class Controller {
         // WHAT THE FAQ HAPPEN THESE
         double[][] A = new double[whitePointsCount][whitePointsCount];
         for (int i = 0; i < whitePointsCount; i++) {
-            for (int j = 0; j < whitePointsCount; j++) {
-                A[i][j] = 0;
-            }
-        }
 
-        for (int i = 0; i < whitePointsCount; i++) {
-            Point3d p0 = points.get(i);
-            List<Integer> n0 = p0.getTriangleList();
             for (int j = 0; j < whitePointsCount; j++) {
-                Point3d p1 = points.get(j);
-                List<Integer> n1 = p1.getTriangleList();
+
+                double value = 0;
+
+                List<Integer> tempTriangles = new ArrayList<>();
 
                 if (i == j) {
-                    double value = 0;
-                    for (Integer triangleIndex : n0) {
-                        double[] ABS = triangles.get(triangleIndex).magicCalc(i);
-                        double valueA = ABS[0];
-                        double valueB = ABS[1];
-                        double valueS = ABS[2];
-                        value += (valueA * valueA + valueB * valueB) * valueS;
+
+                    for (int k = 0; k < triangles.size(); k++) {
+                        Triangle triangle = triangles.get(k);
+                        if (triangle.getRaid() == i || triangle.getRbid() == i || triangle.getRcid() == i) {
+                            tempTriangles.add(k);
+                        }
                     }
-                    A[i][j] = -value;
+
+                    for (Integer triangleIndex : tempTriangles) {
+                        Triangle triangle = triangles.get(triangleIndex);
+                        Point3d p1 = points.get(triangle.getRaid());
+                        Point3d p2 = points.get(triangle.getRbid());
+                        Point3d p3 = points.get(triangle.getRcid());
+                        double a = (p2.y() - p1.y()) * (-1) - (p3.y() - p1.y()) * (-1);
+                        double b = (p2.x() - p1.x()) - (p3.x() - p1.x());
+                        double s = Math.abs((p2.x() - p1.x()) * (p3.y() - p1.y()) - (p2.y() - p1.y()) * (p3.x() - p1.x())) / 2;
+                        value += s * (a * a + b * b);
+                    }
 
                 } else {
-                    Set<Integer> neighTrianglesIndices = new HashSet<>();
-                    for (Integer index0 : n0) {
-                        for (Integer index1 : n1) {
-                            if (index0.equals(index1)) {
-                                neighTrianglesIndices.add(index0);
-                            }
+
+                    for (int k = 0; k < triangles.size(); k++) {
+                        Triangle triangle = triangles.get(k);
+                        boolean statement =
+                                (triangle.getRaid() == i && triangle.getRbid() == j) ||
+                                        (triangle.getRaid() == i && triangle.getRcid() == j) ||
+                                        (triangle.getRbid() == i && triangle.getRaid() == j) ||
+                                        (triangle.getRbid() == i && triangle.getRcid() == j) ||
+                                        (triangle.getRcid() == i && triangle.getRaid() == j) ||
+                                        (triangle.getRcid() == i && triangle.getRbid() == j);
+                        if (statement) {
+                            tempTriangles.add(k);
                         }
                     }
 
-                    if (!neighTrianglesIndices.isEmpty()) {
+                    if (tempTriangles.size() != 0) {
+                        for (Integer triangleIndex : tempTriangles) {
 
-                        // USE FOR DEBUG
-                        if (neighTrianglesIndices.size() != 2) {
-                            System.err.println("TWO POINTS HAS NEIGHBOUR TRIANGLES NOT EQUAL TWO!");
-                            System.exit(-1);
+                            Triangle triangle = triangles.get(triangleIndex);
+
+                            int p1 = triangle.getRaid();
+                            int p2 = triangle.getRbid();
+                            int p3 = triangle.getRcid();
+
+                            Point3d a = points.get(triangle.getRaid());
+                            Point3d b = points.get(triangle.getRbid());
+                            Point3d c = points.get(triangle.getRcid());
+
+                            Point3d pt1 = new Point3d(a.x(), a.y(), a.z());
+                            Point3d pt2 = new Point3d(b.x(), b.y(), b.z());
+                            Point3d pt3 = new Point3d(c.x(), c.y(), c.z());
+
+                            if (p1 == i) {
+                                if (p2 == j) {
+                                    pt1 = new Point3d(a.x(), a.y(), 1.0);
+                                    pt2 = new Point3d(b.x(), b.y(), 1.0);
+                                    pt3 = new Point3d(c.x(), c.y(), c.z());
+                                }
+                                if (p3 == j) {
+                                    pt1 = new Point3d(a.x(), a.y(), 1.0);
+                                    pt2 = new Point3d(c.x(), c.y(), c.z());
+                                    pt3 = new Point3d(b.x(), b.y(), 1.0);
+                                }
+                            }
+                            if (p2 == i) {
+                                if (p1 == j) {
+                                    pt1 = new Point3d(b.x(), b.y(), 1.0);
+                                    pt2 = new Point3d(a.x(), a.y(), 1.0);
+                                    pt3 = new Point3d(c.x(), c.y(), c.z());
+                                }
+                                if (p3 == j) {
+                                    pt1 = new Point3d(b.x(), b.y(), b.x());
+                                    pt2 = new Point3d(c.x(), c.y(), 1.0);
+                                    pt3 = new Point3d(a.x(), a.y(), 1.0);
+                                }
+                            }
+                            if (p3 == i) {
+                                if (p2 == j) {
+                                    pt1 = new Point3d(c.x(), c.y(), c.z());
+                                    pt2 = new Point3d(b.x(), b.y(), 1.0);
+                                    pt3 = new Point3d(a.x(), a.y(), 1.0);
+                                }
+                                if (p1 == j) {
+                                    pt1 = new Point3d(c.x(), c.y(), 1.0);
+                                    pt2 = new Point3d(a.x(), a.y(), a.z());
+                                    pt3 = new Point3d(b.x(), b.y(), 1.0);
+                                }
+                            }
+
+                            double ai = (pt2.y() - pt1.y()) * (-1) - (pt3.y() - pt1.y()) * (-1);
+                            double bi = (pt3.x() - pt1.x()) * (-1) - (pt2.x() - pt1.x()) * (-1);
+
+                            double aj = (pt2.y() - pt1.y()) * (0) - (pt3.y() - pt1.y()) * (1);
+                            double bj = (pt3.x() - pt1.x()) * (1) - (pt2.x() - pt1.x()) * (0);
+
+                            double s = Math.abs((pt2.x() - pt1.x()) * (pt3.y() - pt1.y()) - (pt2.y() - pt1.y()) * (pt3.x() - pt1.x())) / 2.0;
+
+                            value += s * (ai * aj + bi * bj);
                         }
-
-                        double value = 0;
-                        for (Integer triangleIndex : neighTrianglesIndices) {
-                            double[] ABSi = triangles.get(triangleIndex).magicCalc(i);
-                            double[] ABSj = triangles.get(triangleIndex).magicCalc(j);
-                            value += (ABSi[0] * ABSj[0] + ABSi[1] * ABSj[1]) * ABSi[2];
-                        }
-                        A[i][j] = -value;
-
-                    } else {
-                        A[i][j] = 0;
                     }
 
                 }
+
+                A[i][j] = value;
 
             }
         }
@@ -315,13 +372,95 @@ public class Controller {
         for (int i = 0; i < whitePointsCount; i++) {
             double value = 0;
             for (int j = 0; j < redPointsCount; j++) {
-                if (i == j) {
 
-                } else {
-                    value += points.get(j + whitePointsCount).getValue() * A[j][i];
+                if (i != j) {
+
+                    List<Integer> tempTriangles = new ArrayList<>();
+                    for (int k = 0; k < triangles.size(); k++) {
+                        Triangle triangle = triangles.get(k);
+                        boolean statement = (triangle.getRaid() == i && triangle.getRbid() == j + whitePointsCount) ||
+                                (triangle.getRaid() == i && triangle.getRcid() == j + whitePointsCount) ||
+                                (triangle.getRbid() == i && triangle.getRaid() == j + whitePointsCount) ||
+                                (triangle.getRbid() == i && triangle.getRcid() == j + whitePointsCount) ||
+                                (triangle.getRcid() == i && triangle.getRaid() == j + whitePointsCount) ||
+                                (triangle.getRcid() == i && triangle.getRbid() == j + whitePointsCount);
+                        if (statement) {
+                            tempTriangles.add(k);
+                        }
+                    }
+
+                    if (tempTriangles.size() != 0) {
+                        for (Integer triangleIndex : tempTriangles) {
+
+//                            double[] ABSi = triangles.get(triangleIndex).magicCalc(i);
+//                            double[] ABSj = triangles.get(triangleIndex).magicCalc(j + whitePointsCount);
+//                            value += points.get(j + whitePointsCount).getValue() * (ABSi[0] * ABSj[0] + ABSi[1] * ABSj[1]) * ABSi[2];
+
+                            Triangle triangle = triangles.get(triangleIndex);
+
+                            int p1 = triangle.getRaid();
+                            int p2 = triangle.getRbid();
+                            int p3 = triangle.getRcid();
+
+                            Point3d a = points.get(p1);
+                            Point3d b = points.get(p2);
+                            Point3d c = points.get(p3);
+
+                            Point3d pt1 = new Point3d(a.x(), a.y(), a.z());
+                            Point3d pt2 = new Point3d(b.x(), b.y(), b.z());
+                            Point3d pt3 = new Point3d(c.x(), c.y(), c.z());
+
+                            if (p1 == i) {
+                                if (p2 == j + whitePointsCount) {
+                                    pt1 = new Point3d(a.x(), a.y(), 1.0);
+                                    pt2 = new Point3d(b.x(), b.y(), 1.0);
+                                    pt3 = new Point3d(c.x(), c.y(), c.z());
+                                }
+                                if (p3 == j + whitePointsCount) {
+                                    pt1 = new Point3d(a.x(), a.y(), 1.0);
+                                    pt2 = new Point3d(c.x(), c.y(), c.z());
+                                    pt3 = new Point3d(b.x(), b.y(), 1.0);
+                                }
+                            }
+                            if (p2 == i) {
+                                if (p1 == j + whitePointsCount) {
+                                    pt1 = new Point3d(b.x(), b.y(), 1.0);
+                                    pt2 = new Point3d(a.x(), a.y(), 1.0);
+                                    pt3 = new Point3d(c.x(), c.y(), c.z());
+                                }
+                                if (p3 == j + whitePointsCount) {
+                                    pt1 = new Point3d(b.x(), b.y(), b.z());
+                                    pt2 = new Point3d(c.x(), c.y(), 1.0);
+                                    pt3 = new Point3d(a.x(), a.y(), 1.0);
+                                }
+                            }
+                            if (p3 == i) {
+                                if (p2 == j + whitePointsCount) {
+                                    pt1 = new Point3d(c.x(), c.y(), c.z());
+                                    pt2 = new Point3d(b.x(), b.y(), 1.0);
+                                    pt3 = new Point3d(a.x(), a.y(), 1.0);
+                                }
+                                if (p1 == j + whitePointsCount) {
+                                    pt1 = new Point3d(c.x(), c.y(), 1.0);
+                                    pt2 = new Point3d(a.x(), a.y(), a.z());
+                                    pt3 = new Point3d(b.x(), b.y(), 1.0);
+                                }
+                            }
+
+                            double koef_Ai = (pt2.y() - pt1.y()) * (-1) - (pt3.y() - pt1.y()) * (-1);
+                            double koef_Bi = (pt3.x() - pt1.x()) * (-1) - (pt2.x() - pt1.x()) * (-1);
+
+                            double koef_Aj = (pt2.y() - pt1.y()) * (0) - (pt3.y() - pt1.y()) * (1);
+                            double koef_Bj = (pt3.x() - pt1.x()) * (1) - (pt2.x() - pt1.x()) * (0);
+
+                            double S = Math.abs((pt2.x() - pt1.x()) * (pt3.y() - pt1.y()) - (pt2.y() - pt1.y()) * (pt3.x() - pt1.x())) / 2.0;
+
+                            value += points.get(j + whitePointsCount).getValue() * (koef_Ai * koef_Aj + koef_Bi * koef_Bj) * S;
+                        }
+                    }
                 }
             }
-            B[i] = value;
+            B[i] = value * (-1);
         }
 
         RealMatrix coefficients = new Array2DRowRealMatrix(A, false);
@@ -347,7 +486,7 @@ public class Controller {
     double valueMapper(double value, double min, double max) {
         return ((value - min) / (max - min));
     }
-    
+
     private void draw() {
 
         GraphicsContext graphicsContext = canvas.getGraphicsContext2D();
@@ -366,6 +505,7 @@ public class Controller {
             graphicsContext.setStroke(Color.GREEN);
             graphicsContext.setLineWidth(0.5 * (1 / zoom));
             for (Triangle t : triangles) {
+                graphicsContext.setStroke(Objects.requireNonNullElse(t.neighColor, Color.GREEN));
                 Point3d a = points.get(t.getRaid());
                 Point3d b = points.get(t.getRbid());
                 Point3d c = points.get(t.getRcid());
@@ -378,7 +518,16 @@ public class Controller {
         // Draw points
         double r = 0.01;
         for (Point3d p : points) {
-            graphicsContext.setFill(Color.WHITE.interpolate(Color.RED, p.getValue()));
+            double value = p.getValue();
+
+//            if (value > 0.5) {
+//                graphicsContext.setFill(Color.BLACK.interpolate(Color.RED, 2 * (p.getValue() - 0.5)));
+//            } else {
+//                graphicsContext.setFill(Color.BLUE.interpolate(Color.BLACK, 2 * p.getValue()));
+//            }
+
+            graphicsContext.setFill(Color.BLUE.interpolate(Color.RED, value));
+
             graphicsContext.fillOval(p.x() - r, p.y() - r, 2 * r, 2 * r);
         }
 
