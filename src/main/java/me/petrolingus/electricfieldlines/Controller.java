@@ -14,7 +14,6 @@ import org.jzy3d.colors.ColorMapper;
 import org.jzy3d.colors.colormaps.ColorMapRainbow;
 import org.jzy3d.javafx.JavaFXChartFactory;
 import org.jzy3d.maths.Coord3d;
-import org.jzy3d.maths.Range;
 import org.jzy3d.plot3d.builder.Builder;
 import org.jzy3d.plot3d.primitives.Shape;
 import org.jzy3d.plot3d.rendering.canvas.Quality;
@@ -566,45 +565,27 @@ public class Controller {
 
     private AWTChart getDemoChart(JavaFXChartFactory factory, String toolkit) {
 
-        double a = Math.random();
-        double b = Math.random();
-
-        // -------------------------------
-        // Define a function to plot
-//        Mapper mapper = new Mapper() {
-//            @Override
-//            public double f(double x, double y) {
-//
-//                int idx =
-//
-//                return Math.cos(x*a) * Math.sin(b*x * y);
-//            }
-//        };
-
-        List<Coord3d> coord3dList = new ArrayList<>();
+        List<Coord3d> cord3dList = new ArrayList<>();
         for (Point3d p : points) {
             double x = p.x();
             double y = p.y();
             double z = p.getValue();
-            coord3dList.add(new Coord3d(x, y, z));
+            cord3dList.add(new Coord3d(x, y, z));
         }
 
-        // Define range and precision for the function to plot
-        Range range = new Range(-1, 1);
-        int steps = N;
+        final Shape surface = Builder.buildDelaunay(cord3dList);
 
-        // Create the object to represent the function over the given range.
-//        final Shape surface = Builder.buildOrthonormal(mapper, range, steps);
-        final Shape surface = Builder.buildDelaunay(coord3dList);
-        surface.setColorMapper(new ColorMapper(new ColorMapRainbow(), surface.getBounds().getZmin(), surface.getBounds().getZmax(), new org.jzy3d.colors.Color(1, 1, 1, .5f)));
-        surface.setFaceDisplayed(true);
-        surface.setWireframeDisplayed(false);
+        surface.setColorMapper(new ColorMapper(new ColorMapRainbow(), surface.getBounds().getZmin(), surface.getBounds().getZmax(), new org.jzy3d.colors.Color(1, 1, 1, 1.0f)));
+        surface.setFaceDisplayed(false);
+        surface.setWireframeColor(new org.jzy3d.colors.Color(0, 0, 0, 0.5f));
+        surface.setWireframeDisplayed(true);
+
 
         // -------------------------------
         // Create a chart
         Quality quality = Quality.Nicest;
-//        quality.setSmoothPolygon(true);
-        //quality.setAnimated(true);
+        quality.setSmoothPolygon(true);
+//        quality.setAnimated(true);
 
         // let factory bind mouse and keyboard controllers to JavaFX node
         AWTChart chart = (AWTChart) factory.newChart(quality, toolkit);
