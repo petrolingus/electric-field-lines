@@ -3,17 +3,34 @@ package me.petrolingus.electricfieldlines;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import me.petrolingus.electricfieldlines.util.Point3d;
 import me.petrolingus.electricfieldlines.util.Triangle;
 import org.apache.commons.math3.linear.*;
+import org.jzy3d.chart.AWTChart;
+import org.jzy3d.colors.ColorMapper;
+import org.jzy3d.colors.colormaps.ColorMapRainbow;
+import org.jzy3d.javafx.JavaFXChartFactory;
+import org.jzy3d.maths.Coord3d;
+import org.jzy3d.maths.Range;
+import org.jzy3d.plot3d.builder.Builder;
+import org.jzy3d.plot3d.primitives.Shape;
+import org.jzy3d.plot3d.rendering.canvas.Quality;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Random;
 
 public class Controller {
 
     @FXML
     private Canvas canvas;
+
+    @FXML
+    private Pane plot3d;
 
     private static final double RADIUS = 0.3;
     private static final double SHIFT = 0.2;
@@ -37,11 +54,23 @@ public class Controller {
 
     public static final List<Point3d> points = new ArrayList<>();
 
+    private ImageView imageView;
+    private AWTChart chart;
+    private JavaFXChartFactory factory;
+
     public void initialize() {
         generationOfPoints();
         triangulation();
         process();
         draw();
+
+        // Jzy3d
+        factory = new JavaFXChartFactory();
+        chart  = getDemoChart(factory, "offscreen");
+        imageView = factory.bindImageView(chart);
+        plot3d.getChildren().add(imageView);
+
+        factory.addSceneSizeChangedListener(chart, plot3d);
     }
 
     private void generationOfPoints() {
@@ -533,6 +562,54 @@ public class Controller {
 
         graphicsContext.restore();
 
+    }
+
+    private AWTChart getDemoChart(JavaFXChartFactory factory, String toolkit) {
+
+        double a = Math.random();
+        double b = Math.random();
+
+        // -------------------------------
+        // Define a function to plot
+//        Mapper mapper = new Mapper() {
+//            @Override
+//            public double f(double x, double y) {
+//
+//                int idx =
+//
+//                return Math.cos(x*a) * Math.sin(b*x * y);
+//            }
+//        };
+
+        List<Coord3d> coord3dList = new ArrayList<>();
+        for (Point3d p : points) {
+            double x = p.x();
+            double y = p.y();
+            double z = p.getValue();
+            coord3dList.add(new Coord3d(x, y, z));
+        }
+
+        // Define range and precision for the function to plot
+        Range range = new Range(-1, 1);
+        int steps = N;
+
+        // Create the object to represent the function over the given range.
+//        final Shape surface = Builder.buildOrthonormal(mapper, range, steps);
+        final Shape surface = Builder.buildDelaunay(coord3dList);
+        surface.setColorMapper(new ColorMapper(new ColorMapRainbow(), surface.getBounds().getZmin(), surface.getBounds().getZmax(), new org.jzy3d.colors.Color(1, 1, 1, .5f)));
+        surface.setFaceDisplayed(true);
+        surface.setWireframeDisplayed(false);
+
+        // -------------------------------
+        // Create a chart
+        Quality quality = Quality.Nicest;
+//        quality.setSmoothPolygon(true);
+        //quality.setAnimated(true);
+
+        // let factory bind mouse and keyboard controllers to JavaFX node
+        AWTChart chart = (AWTChart) factory.newChart(quality, toolkit);
+        chart.getScene().getGraph().add(surface);
+        return chart;
     }
 
 }
