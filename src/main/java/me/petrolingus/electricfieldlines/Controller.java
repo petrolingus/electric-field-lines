@@ -8,6 +8,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import me.petrolingus.electricfieldlines.util.Point3d;
 import me.petrolingus.electricfieldlines.util.Triangle;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.linear.*;
 import org.jzy3d.chart.AWTChart;
 import org.jzy3d.colors.ColorMapper;
@@ -15,6 +16,7 @@ import org.jzy3d.colors.colormaps.ColorMapRainbow;
 import org.jzy3d.javafx.JavaFXChartFactory;
 import org.jzy3d.maths.Coord3d;
 import org.jzy3d.plot3d.builder.Builder;
+import org.jzy3d.plot3d.primitives.CompileableComposite;
 import org.jzy3d.plot3d.primitives.Shape;
 import org.jzy3d.plot3d.rendering.canvas.Quality;
 
@@ -49,6 +51,9 @@ public class Controller {
     double outerQ = 9;
     double innerQ = -9;
 
+    int outerEdgePoints = 0;
+    int innerEdgePoints = 0;
+
     Random random = new Random();
 
     public static final List<Point3d> points = new ArrayList<>();
@@ -68,7 +73,6 @@ public class Controller {
         chart  = getDemoChart(factory, "offscreen");
         imageView = factory.bindImageView(chart);
         plot3d.getChildren().add(imageView);
-
         factory.addSceneSizeChangedListener(chart, plot3d);
     }
 
@@ -112,6 +116,7 @@ public class Controller {
             points.add(new Point3d(a, b, 0, true, outerQ));
             points.add(new Point3d(b, a, 0, true, outerQ));
             points.add(new Point3d(-b, a, 0, true, outerQ));
+            outerEdgePoints++;
         }
 
         // Add inner edge points
@@ -120,12 +125,14 @@ public class Controller {
             double b = Math.sqrt(RADIUS * RADIUS - (a - cx) * (a - cx));
             points.add(new Point3d(a, -b + cy, 0, true, innerQ));
             points.add(new Point3d(a, b + cy, 0, true, innerQ));
+            innerEdgePoints++;
         }
         for (int i = indexInner135yLeft; i < indexInner135yRight; i++) {
             double a = -1 + i * step;
             double b = Math.sqrt(RADIUS * RADIUS - (a - cy) * (a - cy));
             points.add(new Point3d(b + cx, a, 0, true, innerQ));
             points.add(new Point3d(-b + cx, a, 0, true, innerQ));
+            innerEdgePoints++;
         }
     }
 
@@ -298,13 +305,33 @@ public class Controller {
 
                     for (Integer triangleIndex : tempTriangles) {
                         Triangle triangle = triangles.get(triangleIndex);
-                        Point3d p1 = points.get(triangle.getRaid());
-                        Point3d p2 = points.get(triangle.getRbid());
-                        Point3d p3 = points.get(triangle.getRcid());
-                        double a = (p2.y() - p1.y()) * (-1) - (p3.y() - p1.y()) * (-1);
-                        double b = (p2.x() - p1.x()) - (p3.x() - p1.x());
-                        double s = Math.abs((p2.x() - p1.x()) * (p3.y() - p1.y()) - (p2.y() - p1.y()) * (p3.x() - p1.x())) / 2;
-                        value += s * (a * a + b * b);
+
+                        int ida = triangle.getRaid();
+                        int idb = triangle.getRbid();
+                        int idc = triangle.getRcid();
+
+                        Point3d a = points.get(ida);
+                        Point3d b = points.get(idb);
+                        Point3d c = points.get(idc);
+
+                        if (ida == i) {
+                            a = new Point3d(a.x(), a.y(), 1.0);
+                        } else if (idb == i) {
+                            b = new Point3d(b.x(), b.y(), 1.0);
+                        } else if (idc == i) {
+                            c = new Point3d(c.x(), c.y(), 1.0);
+                        } else {
+                            System.err.println("TRIANGLE IN 2D PLANE");
+                            System.exit(-1);
+                        }
+
+                        Vector3D v0 = new Vector3D(b.x() - a.x(), b.y() - a.y(), b.z() - a.z());
+                        Vector3D v1 = new Vector3D(c.x() - a.x(), c.y() - a.y(), c.z() - a.z());
+                        Vector3D normal = v1.crossProduct(v0);
+                        double ai = normal.getX();
+                        double bi = normal.getY();
+                        double s =  normal.getNorm() / 2.0;
+                        value += s * (ai * ai + bi * bi);
                     }
 
                 } else {
@@ -324,66 +351,77 @@ public class Controller {
                     }
 
                     if (tempTriangles.size() != 0) {
+
+                        if (tempTriangles.size() != 2) {
+                            System.err.println("[matrix A]: i != j and neighbours triangle count not equal two");
+                        }
+
                         for (Integer triangleIndex : tempTriangles) {
 
                             Triangle triangle = triangles.get(triangleIndex);
 
-                            int p1 = triangle.getRaid();
-                            int p2 = triangle.getRbid();
-                            int p3 = triangle.getRcid();
+                            int ida = triangle.getRaid();
+                            int idb = triangle.getRbid();
+                            int idc = triangle.getRcid();
 
-                            Point3d a = points.get(triangle.getRaid());
-                            Point3d b = points.get(triangle.getRbid());
-                            Point3d c = points.get(triangle.getRcid());
+                            Point3d a = points.get(ida);
+                            Point3d b = points.get(idb);
+                            Point3d c = points.get(idc);
 
                             Point3d pt1 = new Point3d(a.x(), a.y(), a.z());
                             Point3d pt2 = new Point3d(b.x(), b.y(), b.z());
                             Point3d pt3 = new Point3d(c.x(), c.y(), c.z());
 
-                            if (p1 == i) {
-                                if (p2 == j) {
-                                    pt1 = new Point3d(a.x(), a.y(), 1.0);
-                                    pt2 = new Point3d(b.x(), b.y(), 1.0);
+                            if (ida == i) {
+                                if (idb == j) {
+                                    pt1 = new Point3d(a.x(), a.y(), a.z());
+                                    pt2 = new Point3d(b.x(), b.y(), b.z());
                                     pt3 = new Point3d(c.x(), c.y(), c.z());
                                 }
-                                if (p3 == j) {
-                                    pt1 = new Point3d(a.x(), a.y(), 1.0);
+                                if (idc == j) {
+                                    pt1 = new Point3d(a.x(), a.y(), a.z());
                                     pt2 = new Point3d(c.x(), c.y(), c.z());
-                                    pt3 = new Point3d(b.x(), b.y(), 1.0);
+                                    pt3 = new Point3d(b.x(), b.y(), b.z());
                                 }
                             }
-                            if (p2 == i) {
-                                if (p1 == j) {
-                                    pt1 = new Point3d(b.x(), b.y(), 1.0);
-                                    pt2 = new Point3d(a.x(), a.y(), 1.0);
+                            if (idb == i) {
+                                if (ida == j) {
+                                    pt1 = new Point3d(b.x(), b.y(), b.z());
+                                    pt2 = new Point3d(a.x(), a.y(), a.z());
                                     pt3 = new Point3d(c.x(), c.y(), c.z());
                                 }
-                                if (p3 == j) {
-                                    pt1 = new Point3d(b.x(), b.y(), b.x());
-                                    pt2 = new Point3d(c.x(), c.y(), 1.0);
-                                    pt3 = new Point3d(a.x(), a.y(), 1.0);
+                                if (idc == j) {
+                                    pt1 = new Point3d(b.x(), b.y(), b.z());
+                                    pt2 = new Point3d(c.x(), c.y(), c.z());
+                                    pt3 = new Point3d(a.x(), a.y(), a.z());
                                 }
                             }
-                            if (p3 == i) {
-                                if (p2 == j) {
+                            if (idc == i) {
+                                if (idb == j) {
                                     pt1 = new Point3d(c.x(), c.y(), c.z());
-                                    pt2 = new Point3d(b.x(), b.y(), 1.0);
-                                    pt3 = new Point3d(a.x(), a.y(), 1.0);
+                                    pt2 = new Point3d(b.x(), b.y(), b.z());
+                                    pt3 = new Point3d(a.x(), a.y(), a.z());
                                 }
-                                if (p1 == j) {
-                                    pt1 = new Point3d(c.x(), c.y(), 1.0);
+                                if (ida == j) {
+                                    pt1 = new Point3d(c.x(), c.y(), c.z());
                                     pt2 = new Point3d(a.x(), a.y(), a.z());
-                                    pt3 = new Point3d(b.x(), b.y(), 1.0);
+                                    pt3 = new Point3d(b.x(), b.y(), b.z());
                                 }
                             }
 
-                            double ai = (pt2.y() - pt1.y()) * (-1) - (pt3.y() - pt1.y()) * (-1);
-                            double bi = (pt3.x() - pt1.x()) * (-1) - (pt2.x() - pt1.x()) * (-1);
+                            Vector3D p21i = new Vector3D(pt2.x() - pt1.x(), pt2.y() - pt1.y(), -1);
+                            Vector3D p31i = new Vector3D(pt3.x() - pt1.x(), pt3.y() - pt1.y(), -1);
+                            Vector3D vi = p21i.crossProduct(p31i);
+                            double ai = vi.getX();
+                            double bi = vi.getY();
 
-                            double aj = (pt2.y() - pt1.y()) * (0) - (pt3.y() - pt1.y()) * (1);
-                            double bj = (pt3.x() - pt1.x()) * (1) - (pt2.x() - pt1.x()) * (0);
+                            Vector3D p21j = new Vector3D(pt2.x() - pt1.x(), pt2.y() - pt1.y(), 1);
+                            Vector3D p31j = new Vector3D(pt3.x() - pt1.x(), pt3.y() - pt1.y(), 0);
+                            Vector3D vj = p21j.crossProduct(p31j);
+                            double aj = vj.getX();
+                            double bj = vj.getY();
 
-                            double s = Math.abs((pt2.x() - pt1.x()) * (pt3.y() - pt1.y()) - (pt2.y() - pt1.y()) * (pt3.x() - pt1.x())) / 2.0;
+                            double s = vi.getNorm() / 2.0;
 
                             value += s * (ai * aj + bi * bj);
                         }
@@ -401,7 +439,7 @@ public class Controller {
             double value = 0;
             for (int j = 0; j < redPointsCount; j++) {
 
-                if (i != j) {
+                if (true) {
 
                     List<Integer> tempTriangles = new ArrayList<>();
                     for (int k = 0; k < triangles.size(); k++) {
@@ -418,72 +456,81 @@ public class Controller {
                     }
 
                     if (tempTriangles.size() != 0) {
-                        for (Integer triangleIndex : tempTriangles) {
 
-//                            double[] ABSi = triangles.get(triangleIndex).magicCalc(i);
-//                            double[] ABSj = triangles.get(triangleIndex).magicCalc(j + whitePointsCount);
-//                            value += points.get(j + whitePointsCount).getValue() * (ABSi[0] * ABSj[0] + ABSi[1] * ABSj[1]) * ABSi[2];
+                        if (tempTriangles.size() != 2) {
+                            System.err.println("[vector B]: i != j and neighbours triangle count not equal two");
+                        }
+
+                        for (Integer triangleIndex : tempTriangles) {
 
                             Triangle triangle = triangles.get(triangleIndex);
 
-                            int p1 = triangle.getRaid();
-                            int p2 = triangle.getRbid();
-                            int p3 = triangle.getRcid();
+                            int ida = triangle.getRaid();
+                            int idb = triangle.getRbid();
+                            int idc = triangle.getRcid();
 
-                            Point3d a = points.get(p1);
-                            Point3d b = points.get(p2);
-                            Point3d c = points.get(p3);
+                            Point3d a = points.get(ida);
+                            Point3d b = points.get(idb);
+                            Point3d c = points.get(idc);
 
                             Point3d pt1 = new Point3d(a.x(), a.y(), a.z());
                             Point3d pt2 = new Point3d(b.x(), b.y(), b.z());
                             Point3d pt3 = new Point3d(c.x(), c.y(), c.z());
 
-                            if (p1 == i) {
-                                if (p2 == j + whitePointsCount) {
-                                    pt1 = new Point3d(a.x(), a.y(), 1.0);
-                                    pt2 = new Point3d(b.x(), b.y(), 1.0);
+                            if (ida == i) {
+                                if (idb == j + whitePointsCount) {
+                                    pt1 = new Point3d(a.x(), a.y(), a.z());
+                                    pt2 = new Point3d(b.x(), b.y(), b.z());
                                     pt3 = new Point3d(c.x(), c.y(), c.z());
                                 }
-                                if (p3 == j + whitePointsCount) {
-                                    pt1 = new Point3d(a.x(), a.y(), 1.0);
+                                if (idc == j + whitePointsCount) {
+                                    pt1 = new Point3d(a.x(), a.y(), a.z());
                                     pt2 = new Point3d(c.x(), c.y(), c.z());
-                                    pt3 = new Point3d(b.x(), b.y(), 1.0);
+                                    pt3 = new Point3d(b.x(), b.y(), b.z());
                                 }
                             }
-                            if (p2 == i) {
-                                if (p1 == j + whitePointsCount) {
-                                    pt1 = new Point3d(b.x(), b.y(), 1.0);
-                                    pt2 = new Point3d(a.x(), a.y(), 1.0);
+                            if (idb == i) {
+                                if (ida == j + whitePointsCount) {
+                                    pt1 = new Point3d(b.x(), b.y(), b.z());
+                                    pt2 = new Point3d(a.x(), a.y(), a.z());
                                     pt3 = new Point3d(c.x(), c.y(), c.z());
                                 }
-                                if (p3 == j + whitePointsCount) {
+                                if (idc == j + whitePointsCount) {
                                     pt1 = new Point3d(b.x(), b.y(), b.z());
-                                    pt2 = new Point3d(c.x(), c.y(), 1.0);
-                                    pt3 = new Point3d(a.x(), a.y(), 1.0);
+                                    pt2 = new Point3d(c.x(), c.y(), c.z());
+                                    pt3 = new Point3d(a.x(), a.y(), a.z());
                                 }
                             }
-                            if (p3 == i) {
-                                if (p2 == j + whitePointsCount) {
+                            if (idc == i) {
+                                if (idb == j + whitePointsCount) {
                                     pt1 = new Point3d(c.x(), c.y(), c.z());
-                                    pt2 = new Point3d(b.x(), b.y(), 1.0);
-                                    pt3 = new Point3d(a.x(), a.y(), 1.0);
+                                    pt2 = new Point3d(b.x(), b.y(), b.z());
+                                    pt3 = new Point3d(a.x(), a.y(), a.z());
                                 }
-                                if (p1 == j + whitePointsCount) {
-                                    pt1 = new Point3d(c.x(), c.y(), 1.0);
+                                if (ida == j + whitePointsCount) {
+                                    pt1 = new Point3d(c.x(), c.y(), c.z());
                                     pt2 = new Point3d(a.x(), a.y(), a.z());
-                                    pt3 = new Point3d(b.x(), b.y(), 1.0);
+                                    pt3 = new Point3d(b.x(), b.y(), b.z());
                                 }
                             }
 
-                            double koef_Ai = (pt2.y() - pt1.y()) * (-1) - (pt3.y() - pt1.y()) * (-1);
-                            double koef_Bi = (pt3.x() - pt1.x()) * (-1) - (pt2.x() - pt1.x()) * (-1);
+                            Vector3D p21i = new Vector3D(pt2.x() - pt1.x(), pt2.y() - pt1.y(), -1);
+                            Vector3D p31i = new Vector3D(pt3.x() - pt1.x(), pt3.y() - pt1.y(), -1);
+                            Vector3D vi = p21i.crossProduct(p31i);
+                            double ai = vi.getX();
+                            double bi = vi.getY();
 
-                            double koef_Aj = (pt2.y() - pt1.y()) * (0) - (pt3.y() - pt1.y()) * (1);
-                            double koef_Bj = (pt3.x() - pt1.x()) * (1) - (pt2.x() - pt1.x()) * (0);
+                            Vector3D p21j = new Vector3D(pt2.x() - pt1.x(), pt2.y() - pt1.y(), 1);
+                            Vector3D p31j = new Vector3D(pt3.x() - pt1.x(), pt3.y() - pt1.y(), 0);
+                            Vector3D vj = p21j.crossProduct(p31j);
+                            double aj = vj.getX();
+                            double bj = vj.getY();
 
-                            double S = Math.abs((pt2.x() - pt1.x()) * (pt3.y() - pt1.y()) - (pt2.y() - pt1.y()) * (pt3.x() - pt1.x())) / 2.0;
+                            double s = vi.getNorm() / 2.0;
 
-                            value += points.get(j + whitePointsCount).getValue() * (koef_Ai * koef_Aj + koef_Bi * koef_Bj) * S;
+                            value += s * (ai * aj + bi * bj);
+
+                            value += points.get(j + whitePointsCount).getValue() * s * (ai * aj + bi * bj);
                         }
                     }
                 }
@@ -507,6 +554,11 @@ public class Controller {
 
         for (int i = 0; i < whitePointsCount; i++) {
             double value = valueMapper(solution.getEntry(i), min, max);
+            points.get(i).setValue(value);
+        }
+
+        for (int i = whitePointsCount; i < points.size(); i++) {
+            double value = valueMapper(points.get(i).getValue(), min, max);
             points.get(i).setValue(value);
         }
     }
@@ -548,13 +600,13 @@ public class Controller {
         for (Point3d p : points) {
             double value = p.getValue();
 
-//            if (value > 0.5) {
-//                graphicsContext.setFill(Color.BLACK.interpolate(Color.RED, 2 * (p.getValue() - 0.5)));
-//            } else {
-//                graphicsContext.setFill(Color.BLUE.interpolate(Color.BLACK, 2 * p.getValue()));
-//            }
+            if (value > 0.5) {
+                graphicsContext.setFill(Color.BLACK.interpolate(Color.RED, 2 * (p.getValue() - 0.5)));
+            } else {
+                graphicsContext.setFill(Color.BLUE.interpolate(Color.BLACK, 2 * p.getValue()));
+            }
 
-            graphicsContext.setFill(Color.BLUE.interpolate(Color.RED, value));
+//            graphicsContext.setFill(Color.BLUE.interpolate(Color.RED, value));
 
             graphicsContext.fillOval(p.x() - r, p.y() - r, 2 * r, 2 * r);
         }
@@ -574,12 +626,10 @@ public class Controller {
         }
 
         final Shape surface = Builder.buildDelaunay(cord3dList);
-
         surface.setColorMapper(new ColorMapper(new ColorMapRainbow(), surface.getBounds().getZmin(), surface.getBounds().getZmax(), new org.jzy3d.colors.Color(1, 1, 1, 1.0f)));
-        surface.setFaceDisplayed(false);
+        surface.setFaceDisplayed(true);
         surface.setWireframeColor(new org.jzy3d.colors.Color(0, 0, 0, 0.5f));
         surface.setWireframeDisplayed(true);
-
 
         // -------------------------------
         // Create a chart
@@ -590,6 +640,7 @@ public class Controller {
         // let factory bind mouse and keyboard controllers to JavaFX node
         AWTChart chart = (AWTChart) factory.newChart(quality, toolkit);
         chart.getScene().getGraph().add(surface);
+
         return chart;
     }
 
