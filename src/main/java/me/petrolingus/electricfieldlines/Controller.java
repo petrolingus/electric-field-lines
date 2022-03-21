@@ -3,12 +3,12 @@ package me.petrolingus.electricfieldlines;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.image.ImageView;
+import javafx.scene.control.Slider;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import me.petrolingus.electricfieldlines.core.DataGenerator;
 import me.petrolingus.electricfieldlines.core.Triangulation;
-import me.petrolingus.electricfieldlines.util.Point3d;
+import me.petrolingus.electricfieldlines.util.Point;
 import me.petrolingus.electricfieldlines.util.Triangle;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.linear.*;
@@ -23,9 +23,17 @@ import org.jzy3d.plot3d.rendering.canvas.Quality;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class Controller {
+
+    @FXML
+    private Slider radiusSlider;
+
+    @FXML
+    private Slider shiftSlider;
+
+    @FXML
+    private Slider angleSlider;
 
     @FXML
     private Canvas canvas;
@@ -33,35 +41,76 @@ public class Controller {
     @FXML
     private Pane plot3d;
 
-    private static final boolean SHOW_TRIANGULATION = true;
+    private static final boolean SHOW_TRIANGULATION = false;
+    private static final boolean SHOW_POINTS = true;
+    private static final boolean SHOW_CONFIGURATION = true;
 
     double min = Double.POSITIVE_INFINITY;
     double max = Double.NEGATIVE_INFINITY;
 
-    public static List<Point3d> points;
+    public static List<Point> points;
     public static List<Triangle> triangles;
 
+    public static Vector3D config;
+
     public void initialize() {
+        calcConfig();
+
+        setupSlider(radiusSlider);
+        setupSlider(shiftSlider);
+        setupSlider(angleSlider);
+
+        draw();
+    }
+
+    private void calcConfig() {
+        double radius = 0.2 + 0.7 * radiusSlider.getValue();
+        double shift = (1 - radius) * (0.8 * shiftSlider.getValue());
+        double angle = 2 * Math.PI * angleSlider.getValue();
+        double x = (shift) * Math.cos(angle);
+        double y = (shift) * Math.sin(angle);
+        config = new Vector3D(x, -y, radius);
+    }
+
+    private void setupSlider(Slider slider) {
+        slider.valueProperty().addListener((changed, oldValue, newValue) -> {
+            calcConfig();
+            draw();
+        });
+    }
+
+    public void onButtonPressed() {
+
+        if (triangles != null) {
+            triangles.clear();
+            min = Double.POSITIVE_INFINITY;
+            max = Double.NEGATIVE_INFINITY;
+        }
+
+        if (points != null) {
+            points.clear();
+        }
+
         generationOfPoints();
         triangulation();
         process();
         draw();
 
         // Jzy3d
-        JavaFXChartFactory factory = new JavaFXChartFactory();
-        AWTChart chart = getDemoChart(factory, "offscreen");
-        ImageView imageView = factory.bindImageView(chart);
-        plot3d.getChildren().add(imageView);
-        factory.addSceneSizeChangedListener(chart, plot3d);
+//        JavaFXChartFactory factory = new JavaFXChartFactory();
+//        AWTChart chart = getDemoChart(factory, "offscreen");
+//        ImageView imageView = factory.bindImageView(chart);
+//        plot3d.getChildren().add(imageView);
+//        factory.addSceneSizeChangedListener(chart, plot3d);
     }
 
     private void generationOfPoints() {
-        DataGenerator generator = new DataGenerator();
+        DataGenerator generator = new DataGenerator(config.getX(), config.getY(), config.getZ());
         points = generator.generate();
     }
 
     private void triangulation() {
-        Triangulation triangulation = new Triangulation();
+        Triangulation triangulation = new Triangulation(config.getX(), config.getY());
         triangles = triangulation.create(points);
     }
 
@@ -71,7 +120,7 @@ public class Controller {
         System.out.println("Points:" + points.size());
 
         int whitePointsCount = 0;
-        for (Point3d p : points) {
+        for (Point p : points) {
             if (!p.isEdge()) {
                 whitePointsCount++;
             }
@@ -86,9 +135,9 @@ public class Controller {
             List<Integer> dependencyTriangles = new ArrayList<>();
             for (int j = 0; j < triangles.size(); j++) {
                 Triangle t = triangles.get(j);
-                int indexV0 = t.getRaid();
-                int indexV1 = t.getRbid();
-                int indexV2 = t.getRcid();
+                int indexV0 = t.getIndexA();
+                int indexV1 = t.getIndexB();
+                int indexV2 = t.getIndexC();
                 boolean cond = (i == indexV0) || (i == indexV1) || (i == indexV2);
                 if (cond) {
                     dependencyTriangles.add(j);
@@ -100,23 +149,23 @@ public class Controller {
         // USE FOR DEBUG NEIGHBOURS
         for (int i = 0; i < triangles.size(); i++) {
             Triangle t = triangles.get(i);
-            int a = t.getRaid();
-            int b = t.getRbid();
-            int c = t.getRcid();
+            int a = t.getIndexA();
+            int b = t.getIndexB();
+            int c = t.getIndexC();
 
-            Point3d p0 = points.get(a);
+            Point p0 = points.get(a);
             boolean cond0 = false;
             for (Integer index0 : p0.getTriangleList()) {
                 cond0 |= index0 == i;
             }
 
-            Point3d p1 = points.get(b);
+            Point p1 = points.get(b);
             boolean cond1 = false;
             for (Integer index0 : p1.getTriangleList()) {
                 cond1 |= index0 == i;
             }
 
-            Point3d p2 = points.get(c);
+            Point p2 = points.get(c);
             boolean cond2 = false;
             for (Integer index0 : p2.getTriangleList()) {
                 cond2 |= index0 == i;
@@ -142,7 +191,7 @@ public class Controller {
 
                     for (int k = 0; k < triangles.size(); k++) {
                         Triangle triangle = triangles.get(k);
-                        if (triangle.getRaid() == i || triangle.getRbid() == i || triangle.getRcid() == i) {
+                        if (triangle.getIndexA() == i || triangle.getIndexB() == i || triangle.getIndexC() == i) {
                             tempTriangles.add(k);
                         }
                     }
@@ -150,20 +199,20 @@ public class Controller {
                     for (Integer triangleIndex : tempTriangles) {
                         Triangle triangle = triangles.get(triangleIndex);
 
-                        int ida = triangle.getRaid();
-                        int idb = triangle.getRbid();
-                        int idc = triangle.getRcid();
+                        int ida = triangle.getIndexA();
+                        int idb = triangle.getIndexB();
+                        int idc = triangle.getIndexC();
 
-                        Point3d a = points.get(ida);
-                        Point3d b = points.get(idb);
-                        Point3d c = points.get(idc);
+                        Point a = points.get(ida);
+                        Point b = points.get(idb);
+                        Point c = points.get(idc);
 
                         if (ida == i) {
-                            a = new Point3d(a.x(), a.y(), 1.0);
+                            a = new Point(a.x(), a.y(), 1.0);
                         } else if (idb == i) {
-                            b = new Point3d(b.x(), b.y(), 1.0);
+                            b = new Point(b.x(), b.y(), 1.0);
                         } else if (idc == i) {
-                            c = new Point3d(c.x(), c.y(), 1.0);
+                            c = new Point(c.x(), c.y(), 1.0);
                         } else {
                             System.err.println("TRIANGLE IN 2D PLANE");
                             System.exit(-1);
@@ -183,12 +232,12 @@ public class Controller {
                     for (int k = 0; k < triangles.size(); k++) {
                         Triangle triangle = triangles.get(k);
                         boolean statement =
-                                (triangle.getRaid() == i && triangle.getRbid() == j) ||
-                                        (triangle.getRaid() == i && triangle.getRcid() == j) ||
-                                        (triangle.getRbid() == i && triangle.getRaid() == j) ||
-                                        (triangle.getRbid() == i && triangle.getRcid() == j) ||
-                                        (triangle.getRcid() == i && triangle.getRaid() == j) ||
-                                        (triangle.getRcid() == i && triangle.getRbid() == j);
+                                (triangle.getIndexA() == i && triangle.getIndexB() == j) ||
+                                        (triangle.getIndexA() == i && triangle.getIndexC() == j) ||
+                                        (triangle.getIndexB() == i && triangle.getIndexA() == j) ||
+                                        (triangle.getIndexB() == i && triangle.getIndexC() == j) ||
+                                        (triangle.getIndexC() == i && triangle.getIndexA() == j) ||
+                                        (triangle.getIndexC() == i && triangle.getIndexB() == j);
                         if (statement) {
                             tempTriangles.add(k);
                         }
@@ -204,52 +253,52 @@ public class Controller {
 
                             Triangle triangle = triangles.get(triangleIndex);
 
-                            int ida = triangle.getRaid();
-                            int idb = triangle.getRbid();
-                            int idc = triangle.getRcid();
+                            int ida = triangle.getIndexA();
+                            int idb = triangle.getIndexB();
+                            int idc = triangle.getIndexC();
 
-                            Point3d a = points.get(ida);
-                            Point3d b = points.get(idb);
-                            Point3d c = points.get(idc);
+                            Point a = points.get(ida);
+                            Point b = points.get(idb);
+                            Point c = points.get(idc);
 
-                            Point3d pt1 = new Point3d(a.x(), a.y(), a.z());
-                            Point3d pt2 = new Point3d(b.x(), b.y(), b.z());
-                            Point3d pt3 = new Point3d(c.x(), c.y(), c.z());
+                            Point pt1 = new Point(a.x(), a.y(), a.z());
+                            Point pt2 = new Point(b.x(), b.y(), b.z());
+                            Point pt3 = new Point(c.x(), c.y(), c.z());
 
                             if (ida == i) {
                                 if (idb == j) {
-                                    pt1 = new Point3d(a.x(), a.y(), a.z());
-                                    pt2 = new Point3d(b.x(), b.y(), b.z());
-                                    pt3 = new Point3d(c.x(), c.y(), c.z());
+                                    pt1 = new Point(a.x(), a.y(), a.z());
+                                    pt2 = new Point(b.x(), b.y(), b.z());
+                                    pt3 = new Point(c.x(), c.y(), c.z());
                                 }
                                 if (idc == j) {
-                                    pt1 = new Point3d(a.x(), a.y(), a.z());
-                                    pt2 = new Point3d(c.x(), c.y(), c.z());
-                                    pt3 = new Point3d(b.x(), b.y(), b.z());
+                                    pt1 = new Point(a.x(), a.y(), a.z());
+                                    pt2 = new Point(c.x(), c.y(), c.z());
+                                    pt3 = new Point(b.x(), b.y(), b.z());
                                 }
                             }
                             if (idb == i) {
                                 if (ida == j) {
-                                    pt1 = new Point3d(b.x(), b.y(), b.z());
-                                    pt2 = new Point3d(a.x(), a.y(), a.z());
-                                    pt3 = new Point3d(c.x(), c.y(), c.z());
+                                    pt1 = new Point(b.x(), b.y(), b.z());
+                                    pt2 = new Point(a.x(), a.y(), a.z());
+                                    pt3 = new Point(c.x(), c.y(), c.z());
                                 }
                                 if (idc == j) {
-                                    pt1 = new Point3d(b.x(), b.y(), b.z());
-                                    pt2 = new Point3d(c.x(), c.y(), c.z());
-                                    pt3 = new Point3d(a.x(), a.y(), a.z());
+                                    pt1 = new Point(b.x(), b.y(), b.z());
+                                    pt2 = new Point(c.x(), c.y(), c.z());
+                                    pt3 = new Point(a.x(), a.y(), a.z());
                                 }
                             }
                             if (idc == i) {
                                 if (idb == j) {
-                                    pt1 = new Point3d(c.x(), c.y(), c.z());
-                                    pt2 = new Point3d(b.x(), b.y(), b.z());
-                                    pt3 = new Point3d(a.x(), a.y(), a.z());
+                                    pt1 = new Point(c.x(), c.y(), c.z());
+                                    pt2 = new Point(b.x(), b.y(), b.z());
+                                    pt3 = new Point(a.x(), a.y(), a.z());
                                 }
                                 if (ida == j) {
-                                    pt1 = new Point3d(c.x(), c.y(), c.z());
-                                    pt2 = new Point3d(a.x(), a.y(), a.z());
-                                    pt3 = new Point3d(b.x(), b.y(), b.z());
+                                    pt1 = new Point(c.x(), c.y(), c.z());
+                                    pt2 = new Point(a.x(), a.y(), a.z());
+                                    pt3 = new Point(b.x(), b.y(), b.z());
                                 }
                             }
 
@@ -288,12 +337,12 @@ public class Controller {
                     List<Integer> tempTriangles = new ArrayList<>();
                     for (int k = 0; k < triangles.size(); k++) {
                         Triangle triangle = triangles.get(k);
-                        boolean statement = (triangle.getRaid() == i && triangle.getRbid() == j + whitePointsCount) ||
-                                (triangle.getRaid() == i && triangle.getRcid() == j + whitePointsCount) ||
-                                (triangle.getRbid() == i && triangle.getRaid() == j + whitePointsCount) ||
-                                (triangle.getRbid() == i && triangle.getRcid() == j + whitePointsCount) ||
-                                (triangle.getRcid() == i && triangle.getRaid() == j + whitePointsCount) ||
-                                (triangle.getRcid() == i && triangle.getRbid() == j + whitePointsCount);
+                        boolean statement = (triangle.getIndexA() == i && triangle.getIndexB() == j + whitePointsCount) ||
+                                (triangle.getIndexA() == i && triangle.getIndexC() == j + whitePointsCount) ||
+                                (triangle.getIndexB() == i && triangle.getIndexA() == j + whitePointsCount) ||
+                                (triangle.getIndexB() == i && triangle.getIndexC() == j + whitePointsCount) ||
+                                (triangle.getIndexC() == i && triangle.getIndexA() == j + whitePointsCount) ||
+                                (triangle.getIndexC() == i && triangle.getIndexB() == j + whitePointsCount);
                         if (statement) {
                             tempTriangles.add(k);
                         }
@@ -309,52 +358,52 @@ public class Controller {
 
                             Triangle triangle = triangles.get(triangleIndex);
 
-                            int ida = triangle.getRaid();
-                            int idb = triangle.getRbid();
-                            int idc = triangle.getRcid();
+                            int ida = triangle.getIndexA();
+                            int idb = triangle.getIndexB();
+                            int idc = triangle.getIndexC();
 
-                            Point3d a = points.get(ida);
-                            Point3d b = points.get(idb);
-                            Point3d c = points.get(idc);
+                            Point a = points.get(ida);
+                            Point b = points.get(idb);
+                            Point c = points.get(idc);
 
-                            Point3d pt1 = new Point3d(a.x(), a.y(), a.z());
-                            Point3d pt2 = new Point3d(b.x(), b.y(), b.z());
-                            Point3d pt3 = new Point3d(c.x(), c.y(), c.z());
+                            Point pt1 = new Point(a.x(), a.y(), a.z());
+                            Point pt2 = new Point(b.x(), b.y(), b.z());
+                            Point pt3 = new Point(c.x(), c.y(), c.z());
 
                             if (ida == i) {
                                 if (idb == j + whitePointsCount) {
-                                    pt1 = new Point3d(a.x(), a.y(), a.z());
-                                    pt2 = new Point3d(b.x(), b.y(), b.z());
-                                    pt3 = new Point3d(c.x(), c.y(), c.z());
+                                    pt1 = new Point(a.x(), a.y(), a.z());
+                                    pt2 = new Point(b.x(), b.y(), b.z());
+                                    pt3 = new Point(c.x(), c.y(), c.z());
                                 }
                                 if (idc == j + whitePointsCount) {
-                                    pt1 = new Point3d(a.x(), a.y(), a.z());
-                                    pt2 = new Point3d(c.x(), c.y(), c.z());
-                                    pt3 = new Point3d(b.x(), b.y(), b.z());
+                                    pt1 = new Point(a.x(), a.y(), a.z());
+                                    pt2 = new Point(c.x(), c.y(), c.z());
+                                    pt3 = new Point(b.x(), b.y(), b.z());
                                 }
                             }
                             if (idb == i) {
                                 if (ida == j + whitePointsCount) {
-                                    pt1 = new Point3d(b.x(), b.y(), b.z());
-                                    pt2 = new Point3d(a.x(), a.y(), a.z());
-                                    pt3 = new Point3d(c.x(), c.y(), c.z());
+                                    pt1 = new Point(b.x(), b.y(), b.z());
+                                    pt2 = new Point(a.x(), a.y(), a.z());
+                                    pt3 = new Point(c.x(), c.y(), c.z());
                                 }
                                 if (idc == j + whitePointsCount) {
-                                    pt1 = new Point3d(b.x(), b.y(), b.z());
-                                    pt2 = new Point3d(c.x(), c.y(), c.z());
-                                    pt3 = new Point3d(a.x(), a.y(), a.z());
+                                    pt1 = new Point(b.x(), b.y(), b.z());
+                                    pt2 = new Point(c.x(), c.y(), c.z());
+                                    pt3 = new Point(a.x(), a.y(), a.z());
                                 }
                             }
                             if (idc == i) {
                                 if (idb == j + whitePointsCount) {
-                                    pt1 = new Point3d(c.x(), c.y(), c.z());
-                                    pt2 = new Point3d(b.x(), b.y(), b.z());
-                                    pt3 = new Point3d(a.x(), a.y(), a.z());
+                                    pt1 = new Point(c.x(), c.y(), c.z());
+                                    pt2 = new Point(b.x(), b.y(), b.z());
+                                    pt3 = new Point(a.x(), a.y(), a.z());
                                 }
                                 if (ida == j + whitePointsCount) {
-                                    pt1 = new Point3d(c.x(), c.y(), c.z());
-                                    pt2 = new Point3d(a.x(), a.y(), a.z());
-                                    pt3 = new Point3d(b.x(), b.y(), b.z());
+                                    pt1 = new Point(c.x(), c.y(), c.z());
+                                    pt2 = new Point(a.x(), a.y(), a.z());
+                                    pt3 = new Point(b.x(), b.y(), b.z());
                                 }
                             }
 
@@ -425,14 +474,13 @@ public class Controller {
         graphicsContext.scale(zoom, zoom);
 
         // Draw triangles
-        if (SHOW_TRIANGULATION) {
+        if (triangles != null && SHOW_TRIANGULATION) {
             graphicsContext.setStroke(Color.GREEN);
             graphicsContext.setLineWidth(0.5 * (1 / zoom));
             for (Triangle t : triangles) {
-                graphicsContext.setStroke(Objects.requireNonNullElse(t.neighColor, Color.GREEN));
-                Point3d a = points.get(t.getRaid());
-                Point3d b = points.get(t.getRbid());
-                Point3d c = points.get(t.getRcid());
+                Point a = points.get(t.getIndexA());
+                Point b = points.get(t.getIndexB());
+                Point c = points.get(t.getIndexC());
                 graphicsContext.strokeLine(a.x(), a.y(), b.x(), b.y());
                 graphicsContext.strokeLine(b.x(), b.y(), c.x(), c.y());
                 graphicsContext.strokeLine(c.x(), c.y(), a.x(), a.y());
@@ -440,19 +488,32 @@ public class Controller {
         }
 
         // Draw points
-        double r = 0.01;
-        for (Point3d p : points) {
-            double value = p.getValue();
+        if (points != null && SHOW_POINTS) {
+            double r = 0.01;
+            for (Point p : points) {
+                double value = p.getValue();
 
-            if (value > 0.5) {
-                graphicsContext.setFill(Color.BLACK.interpolate(Color.RED, 2 * (p.getValue() - 0.5)));
-            } else {
-                graphicsContext.setFill(Color.BLUE.interpolate(Color.BLACK, 2 * p.getValue()));
-            }
+                if (value > 0.5) {
+                    graphicsContext.setFill(Color.BLACK.interpolate(Color.RED, 2 * (p.getValue() - 0.5)));
+                } else {
+                    graphicsContext.setFill(Color.BLUE.interpolate(Color.BLACK, 2 * p.getValue()));
+                }
 
 //            graphicsContext.setFill(Color.BLUE.interpolate(Color.RED, value));
 
-            graphicsContext.fillOval(p.x() - r, p.y() - r, 2 * r, 2 * r);
+                graphicsContext.fillOval(p.x() - r, p.y() - r, 2 * r, 2 * r);
+            }
+        }
+
+        if (SHOW_CONFIGURATION) {
+            graphicsContext.setLineWidth(0.5 * (1 / zoom));
+            graphicsContext.setStroke(Color.WHITE);
+            graphicsContext.strokeOval(-1, -1, 2, 2);
+
+            double x = config.getX();
+            double y = config.getY();
+            double r = config.getZ();
+            graphicsContext.strokeOval(x - r, y - r, 2 * r, 2 * r);
         }
 
         graphicsContext.restore();
@@ -462,7 +523,7 @@ public class Controller {
     private AWTChart getDemoChart(JavaFXChartFactory factory, String toolkit) {
 
         List<Coord3d> cord3dList = new ArrayList<>();
-        for (Point3d p : points) {
+        for (Point p : points) {
             double x = p.x();
             double y = p.y();
             double z = p.getValue();

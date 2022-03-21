@@ -2,7 +2,7 @@ package me.petrolingus.electricfieldlines.util;
 
 import java.util.List;
 
-public class Point3d {
+public class Point {
 
     private final double x;
     private final double y;
@@ -12,11 +12,11 @@ public class Point3d {
     private double value;
     private List<Integer> triangleList;
 
-    public Point3d(double x, double y, double z) {
+    public Point(double x, double y, double z) {
         this(x, y, z, false, 0);
     }
 
-    public Point3d(double x, double y, double z, boolean isEdge, double value) {
+    public Point(double x, double y, double z, boolean isEdge, double value) {
         this.x = x;
         this.y = y;
         this.z = z;

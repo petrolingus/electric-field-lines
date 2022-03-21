@@ -1,40 +1,24 @@
 package me.petrolingus.electricfieldlines.util;
 
-import javafx.scene.paint.Color;
-import me.petrolingus.electricfieldlines.Controller;
-import org.apache.commons.math3.geometry.Point;
-import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
-
 import java.util.List;
 
 public class Triangle {
 
-    private final int aid;
-    private final int bid;
-    private final int cid;
-
-    private final int raid;
-    private final int rbid;
-    private final int rcid;
+    private int indexA;
+    private int indexB;
+    private int indexC;
 
     private double cx;
     private double cy;
     private double r;
 
-    private boolean isBad;
-
-    public Color neighColor;
-
-    public Triangle(int aid, int bid, int cid) {
-        this.aid = aid;
-        this.bid = bid;
-        this.cid = cid;
-        this.raid = aid - 5;
-        this.rbid = bid - 5;
-        this.rcid = cid - 5;
+    public Triangle(int indexA, int indexB, int indexC) {
+        this.indexA = indexA;
+        this.indexB = indexB;
+        this.indexC = indexC;
     }
 
-    public void calcCircle(Point3d a, Point3d b, Point3d c) {
+    public void calcCircle(Point a, Point b, Point c) {
         double aa = a.mod();
         double bb = b.mod();
         double cc = c.mod();
@@ -55,41 +39,33 @@ public class Triangle {
     }
 
     public List<List<Integer>> getEdges() {
-        List<Integer> edge0 = List.of(Math.min(aid, bid), Math.max(aid, bid));
-        List<Integer> edge1 = List.of(Math.min(bid, cid), Math.max(bid, cid));
-        List<Integer> edge2 = List.of(Math.min(cid, aid), Math.max(cid, aid));
+        List<Integer> edge0 = List.of(Math.min(indexA, indexB), Math.max(indexA, indexB));
+        List<Integer> edge1 = List.of(Math.min(indexB, indexC), Math.max(indexB, indexC));
+        List<Integer> edge2 = List.of(Math.min(indexC, indexA), Math.max(indexC, indexA));
         return List.of(edge0, edge1, edge2);
     }
 
-    public boolean isBad() {
-        return isBad;
+    public int getIndexA() {
+        return indexA;
     }
 
-    public void setBad(boolean bad) {
-        isBad = bad;
+    public void setIndexA(int indexA) {
+        this.indexA = indexA;
     }
 
-    public int getAid() {
-        return aid;
+    public int getIndexB() {
+        return indexB;
     }
 
-    public int getBid() {
-        return bid;
+    public void setIndexB(int indexB) {
+        this.indexB = indexB;
     }
 
-    public int getCid() {
-        return cid;
+    public int getIndexC() {
+        return indexC;
     }
 
-    public int getRaid() {
-        return raid;
-    }
-
-    public int getRbid() {
-        return rbid;
-    }
-
-    public int getRcid() {
-        return rcid;
+    public void setIndexC(int indexC) {
+        this.indexC = indexC;
     }
 }
