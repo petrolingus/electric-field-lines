@@ -3,6 +3,7 @@ package me.petrolingus.electricfieldlines;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Slider;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
@@ -37,14 +38,22 @@ public class Controller {
     private Slider angleSlider;
 
     @FXML
+    private CheckBox configurationCheckBox;
+
+    @FXML
+    private CheckBox triangulationCheckBox;
+
+    @FXML
+    private CheckBox pointsCheckBox;
+
+    @FXML
+    private CheckBox isolineCheckBox;
+
+    @FXML
     private Canvas canvas;
 
     @FXML
     private Pane plot3d;
-
-    private static final boolean SHOW_TRIANGULATION = false;
-    private static final boolean SHOW_POINTS = true;
-    private static final boolean SHOW_CONFIGURATION = true;
 
     double min = Double.POSITIVE_INFINITY;
     double max = Double.NEGATIVE_INFINITY;
@@ -61,6 +70,11 @@ public class Controller {
         setupSlider(shiftSlider);
         setupSlider(angleSlider);
 
+        setupCheckBox(configurationCheckBox);
+        setupCheckBox(triangulationCheckBox);
+        setupCheckBox(pointsCheckBox);
+        setupCheckBox(isolineCheckBox);
+
         draw();
     }
 
@@ -76,6 +90,12 @@ public class Controller {
     private void setupSlider(Slider slider) {
         slider.valueProperty().addListener((changed, oldValue, newValue) -> {
             calcConfig();
+            draw();
+        });
+    }
+
+    private void setupCheckBox(CheckBox checkBox) {
+        checkBox.selectedProperty().addListener((value) -> {
             draw();
         });
     }
@@ -460,6 +480,13 @@ public class Controller {
             double value = valueMapper(points.get(i).getValue(), min, max);
             points.get(i).setValue(value);
         }
+
+        for (Triangle t : triangles) {
+            Point a = points.get(t.getIndexA());
+            Point b = points.get(t.getIndexB());
+            Point c = points.get(t.getIndexC());
+            t.createIsoline(a, b, c);
+        }
     }
 
     double valueMapper(double value, double min, double max) {
@@ -480,7 +507,7 @@ public class Controller {
         graphicsContext.scale(zoom, zoom);
 
         // Draw triangles
-        if (triangles != null && SHOW_TRIANGULATION) {
+        if (triangles != null && triangulationCheckBox.isSelected()) {
             graphicsContext.setStroke(Color.GREEN);
             graphicsContext.setLineWidth(0.5 * (1 / zoom));
             for (Triangle t : triangles) {
@@ -494,7 +521,7 @@ public class Controller {
         }
 
         // Draw points
-        if (points != null && SHOW_POINTS) {
+        if (points != null && pointsCheckBox.isSelected()) {
             double r = 0.01;
             for (Point p : points) {
                 double value = p.getValue();
@@ -511,7 +538,7 @@ public class Controller {
             }
         }
 
-        if (SHOW_CONFIGURATION) {
+        if (configurationCheckBox.isSelected()) {
             graphicsContext.setLineWidth(0.5 * (1 / zoom));
             graphicsContext.setStroke(Color.WHITE);
             graphicsContext.strokeOval(-1, -1, 2, 2);
@@ -520,6 +547,23 @@ public class Controller {
             double y = config.getY();
             double r = config.getZ();
             graphicsContext.strokeOval(x - r, y - r, 2 * r, 2 * r);
+        }
+
+        if (isolineCheckBox.isSelected() && triangles != null) {
+            graphicsContext.setLineWidth(0.5 * (1 / zoom));
+            graphicsContext.setStroke(Color.YELLOW);
+            for (Triangle t : triangles) {
+                if (t.isolines.isEmpty()) {
+                    continue;
+                }
+                for (List<Point> isoline : t.isolines) {
+                    double x1 = isoline.get(0).x();
+                    double y1 = isoline.get(0).y();
+                    double x2 = isoline.get(1).x();
+                    double y2 = isoline.get(1).y();
+                    graphicsContext.strokeLine(x1, y1, x2, y2);
+                }
+            }
         }
 
         graphicsContext.restore();

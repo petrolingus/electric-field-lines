@@ -14,7 +14,7 @@ public class DataGenerator {
 
     private static final double COS135 = -Math.sqrt(2) / 2;
 
-    private static final int N = 32;
+    private static final int N = 48;
 
     private double cx;
     private double cy;
