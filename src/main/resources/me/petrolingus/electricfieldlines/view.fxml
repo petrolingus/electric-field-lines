@@ -41,6 +41,27 @@
                               <Slider fx:id="angleSlider" blockIncrement="0.1" majorTickUnit="0.2" max="1.0" maxHeight="1.7976931348623157E308" minorTickCount="2" />
                            </children>
                         </HBox>
+                        <HBox spacing="6.0">
+                           <children>
+                              <Label maxHeight="1.7976931348623157E308" maxWidth="48.0" minWidth="48.0" prefWidth="48.0" text="Charge" HBox.hgrow="ALWAYS" />
+                              <TextField fx:id="chargeTextField" editable="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="120" HBox.hgrow="ALWAYS" />
+                           </children>
+                        </HBox>
+                     </children>
+                  </VBox>
+               </content>
+            </TitledPane>
+            <TitledPane text="Triangulation">
+               <content>
+                  <VBox spacing="5.0">
+                     <children>
+                        <HBox spacing="6.0">
+                           <children>
+                              <Label maxHeight="1.7976931348623157E308" maxWidth="48.0" minWidth="48.0" prefWidth="48.0" text="Points" HBox.hgrow="ALWAYS" />
+                              <TextField fx:id="pointsIndicator" editable="false" maxHeight="1.7976931348623157E308" maxWidth="48.0" minWidth="48.0" prefWidth="48.0" text="25" />
+                              <Slider fx:id="pointsSlider" blockIncrement="0.1" majorTickUnit="0.2" max="64.0" maxHeight="1.7976931348623157E308" min="8.0" minorTickCount="2" value="25.0" />
+                           </children>
+                        </HBox>
                      </children>
                   </VBox>
                </content>

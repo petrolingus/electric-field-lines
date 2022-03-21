@@ -5,6 +5,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -30,24 +31,27 @@ public class Controller {
 
     @FXML
     private Slider radiusSlider;
-
     @FXML
     private Slider shiftSlider;
-
     @FXML
     private Slider angleSlider;
+    @FXML
+    private TextField chargeTextField;
+
+    @FXML
+    private Slider pointsSlider;
 
     @FXML
     private CheckBox configurationCheckBox;
-
     @FXML
     private CheckBox triangulationCheckBox;
-
     @FXML
     private CheckBox pointsCheckBox;
-
     @FXML
     private CheckBox isolineCheckBox;
+
+    @FXML
+    private TextField pointsIndicator;
 
     @FXML
     private Canvas canvas;
@@ -74,6 +78,14 @@ public class Controller {
         setupCheckBox(triangulationCheckBox);
         setupCheckBox(pointsCheckBox);
         setupCheckBox(isolineCheckBox);
+
+//        pointsSlider.valueChangingProperty().bind(pointsIndicator.promptTextProperty().);
+
+        pointsIndicator.textProperty().bind(pointsSlider.valueProperty().asString("%.0f"));
+
+
+
+
 
         draw();
     }
@@ -131,7 +143,13 @@ public class Controller {
     }
 
     private void generationOfPoints() {
-        DataGenerator generator = new DataGenerator(config.getX(), config.getY(), config.getZ());
+        int n = (int) pointsSlider.getValue();
+        double outerCharge = Double.parseDouble(chargeTextField.getText());
+        double innerCharge = -outerCharge;
+        double cx = config.getX();
+        double cy = config.getY();
+        double radius = config.getZ();
+        DataGenerator generator = new DataGenerator(n, outerCharge, innerCharge, cx, cy, radius);
         points = generator.generate();
     }
 
