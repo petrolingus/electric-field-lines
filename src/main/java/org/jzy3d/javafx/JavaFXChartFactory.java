@@ -34,10 +34,11 @@ import org.jzy3d.plot3d.rendering.view.AWTRenderer3d;
 import org.jzy3d.plot3d.rendering.view.Renderer3d;
 import org.jzy3d.plot3d.rendering.view.View;
 
-@SuppressWarnings("restriction")
-/* Disable JavaFX access restriction warnings */
 public class JavaFXChartFactory extends AWTChartComponentFactory {
+
     static Logger LOGGER = Logger.getLogger(JavaFXChartFactory.class);
+
+    public static String SCREENSHOT_FOLDER = "./data/screenshots/";
 
     public static Chart chart(Quality quality, String toolkit) {
         JavaFXChartFactory f = new JavaFXChartFactory();
@@ -91,8 +92,6 @@ public class JavaFXChartFactory extends AWTChartComponentFactory {
         return imageView;
     }
 
-    /* ########################################### */
-
     /**
      * Register for renderer notifications with a new JavaFX Image
      */
@@ -104,46 +103,24 @@ public class JavaFXChartFactory extends AWTChartComponentFactory {
 
         // Set listener on renderer to update imageView
         JavaFXRenderer3d renderer = (JavaFXRenderer3d) chart.getCanvas().getRenderer();
-        renderer.addDisplayListener(new DisplayListener() {
-            @Override
-            public void onDisplay(Object image) {
-                if (image != null) {
-                    imageView.setImage((Image) image);
-                } else {
-                    LOGGER.error("image is null while listening to renderer");
-                }
+        renderer.addDisplayListener(image -> {
+            if (image != null) {
+                imageView.setImage((Image) image);
+            } else {
+                LOGGER.error("image is null while listening to renderer");
             }
         });
     }
 
     public void addSceneSizeChangedListener(Chart chart, Pane pane) {
-        pane.widthProperty().addListener(new ChangeListener<Number>() {
-            @Override
-            public void changed(ObservableValue<? extends Number> observableValue, Number oldSceneWidth, Number newSceneWidth) {
-                // System.out.println("pane Width: " + newSceneWidth);
-                resetTo(chart, pane.widthProperty().get(), pane.heightProperty().get());
-                // System.out.println("resize ok");
-            }
-        });
-        pane.heightProperty().addListener(new ChangeListener<Number>() {
-            @Override
-            public void changed(ObservableValue<? extends Number> observableValue, Number oldSceneHeight, Number newSceneHeight) {
-                // System.out.println("pane Height: " + newSceneHeight);
-                resetTo(chart, pane.widthProperty().get(), pane.heightProperty().get());
-                // System.out.println("resize ok");
-            }
-        });
+        pane.widthProperty().addListener((observableValue, oldSceneWidth, newSceneWidth) -> resetTo(chart, pane.widthProperty().get(), pane.heightProperty().get()));
+        pane.heightProperty().addListener((observableValue, oldSceneHeight, newSceneHeight) -> resetTo(chart, pane.widthProperty().get(), pane.heightProperty().get()));
     }
 
     protected void resetTo(Chart chart, double width, double height) {
-        if (chart.getCanvas() instanceof OffscreenCanvas) {
-            OffscreenCanvas canvas = (OffscreenCanvas) chart.getCanvas();
-
-            // System.out.println("will init");
+        if (chart.getCanvas() instanceof OffscreenCanvas canvas) {
             canvas.initBuffer(canvas.getCapabilities(), (int) width, (int) height);
-            // LOGGER.error("done initBuffer");
             chart.render();
-            // LOGGER.error("done render");
         } else {
             LOGGER.error("NOT AN OFFSCREEN CANVAS!");
         }
@@ -151,47 +128,37 @@ public class JavaFXChartFactory extends AWTChartComponentFactory {
 
     //custom function
     public void resetSize(Chart chart, double width, double height) {
-        if (chart.getCanvas() instanceof OffscreenCanvas) {
-            OffscreenCanvas canvas = (OffscreenCanvas) chart.getCanvas();
-
-            // System.out.println("will init");
+        if (chart.getCanvas() instanceof OffscreenCanvas canvas) {
             canvas.initBuffer(canvas.getCapabilities(), (int) width, (int) height);
-            // LOGGER.error("done initBuffer");
             chart.render();
-            // LOGGER.error("done render");
         } else {
             LOGGER.error("NOT AN OFFSCREEN CANVAS!");
         }
     }
-
-    /* ################################################# */
 
     @Override
     public Renderer3d newRenderer(View view, boolean traceGL, boolean debugGL) {
         return new JavaFXRenderer3d(view, traceGL, debugGL);
     }
 
-    /* ################################################# */
-
     @Override
     public ICameraMouseController newMouseCameraController(Chart chart) {
-        ICameraMouseController mouse = new JavaFXCameraMouseController(chart, null);
-        return mouse;
+        return new JavaFXCameraMouseController(chart, null);
     }
 
     @Override
     public IMousePickingController newMousePickingController(Chart chart, int clickWidth) {
-        IMousePickingController mouse = new JavaFXMousePickingController(chart, clickWidth);
-        return mouse;
+        return new JavaFXMousePickingController(chart, clickWidth);
     }
 
     @Override
     public ICameraKeyController newKeyboardCameraController(Chart chart) {
-        ICameraKeyController key = new JavaFXCameraKeyController(chart, null);
-        return key;
+        return new JavaFXCameraKeyController(chart, null);
     }
 
-    /** TODO : replace by a JavaFXScreenshotKeyController */
+    /**
+     * TODO : replace by a JavaFXScreenshotKeyController
+     */
     @Override
     public IScreenshotKeyController newKeyboardScreenshotController(Chart chart) {
         // trigger screenshot on 's' letter
@@ -217,7 +184,5 @@ public class JavaFXChartFactory extends AWTChartComponentFactory {
         });
         return screenshot;
     }
-
-    public static String SCREENSHOT_FOLDER = "./data/screenshots/";
 
 }

@@ -1,12 +1,56 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
 
-<HBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.petrolingus.electricfieldlines.Controller">
+<HBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.petrolingus.electricfieldlines.Controller">
   <children>
+      <VBox prefWidth="256.0" spacing="8.0" HBox.hgrow="ALWAYS">
+         <children>
+            <TitledPane>
+               <content>
+                  <VBox spacing="5.0">
+                     <children>
+                        <HBox spacing="6.0">
+                           <children>
+                              <Label maxHeight="1.7976931348623157E308" maxWidth="48.0" minWidth="48.0" prefWidth="48.0" text="Radius" HBox.hgrow="ALWAYS" />
+                              <TextField maxHeight="1.7976931348623157E308" maxWidth="48.0" minWidth="48.0" prefWidth="48.0" text="0.32" />
+                              <Slider fx:id="radiusSlider" blockIncrement="0.1" majorTickUnit="0.2" max="1.0" maxHeight="1.7976931348623157E308" minorTickCount="2" value="0.5" />
+                           </children>
+                        </HBox>
+                        <HBox spacing="6.0">
+                           <children>
+                              <Label maxHeight="1.7976931348623157E308" maxWidth="48.0" minWidth="48.0" prefWidth="48.0" text="Shift" HBox.hgrow="ALWAYS" />
+                              <TextField maxHeight="1.7976931348623157E308" maxWidth="48.0" minWidth="48.0" prefWidth="48.0" text="0.32" />
+                              <Slider fx:id="shiftSlider" blockIncrement="0.1" majorTickUnit="0.2" max="1.0" maxHeight="1.7976931348623157E308" minorTickCount="2" />
+                           </children>
+                        </HBox>
+                        <HBox spacing="6.0">
+                           <children>
+                              <Label maxHeight="1.7976931348623157E308" maxWidth="48.0" minWidth="48.0" prefWidth="48.0" text="Angle" HBox.hgrow="ALWAYS" />
+                              <TextField maxHeight="1.7976931348623157E308" maxWidth="48.0" minWidth="48.0" prefWidth="48.0" text="0.32" />
+                              <Slider fx:id="angleSlider" blockIncrement="0.1" majorTickUnit="0.2" max="1.0" maxHeight="1.7976931348623157E308" minorTickCount="2" />
+                           </children>
+                        </HBox>
+                     </children>
+                  </VBox>
+               </content>
+            </TitledPane>
+            <Button mnemonicParsing="false" onAction="#onButtonPressed" text="Button" />
+         </children>
+         <padding>
+            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+         </padding>
+      </VBox>
     <Canvas fx:id="canvas" height="720.0" width="640.0" />
-      <Pane fx:id="plot3d" prefWidth="640.0" />
+      <Pane fx:id="plot3d" prefWidth="720.0" HBox.hgrow="ALWAYS" />
   </children>
 </HBox>
