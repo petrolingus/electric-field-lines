@@ -12,23 +12,22 @@ import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.glu.GLU;
 
-@SuppressWarnings("restriction")
-/* Disable JavaFX access restriction warnings */
-public class JavaFXRenderer3d extends AWTImageRenderer3d{
+public class JavaFXRenderer3d extends AWTImageRenderer3d {
+
     public JavaFXRenderer3d() {
         super();
     }
 
-    public JavaFXRenderer3d(View view, boolean traceGL, boolean debugGL, GLU glu) {
-        super(view, traceGL, debugGL, glu);
+    public JavaFXRenderer3d(View view) {
+        super(view);
     }
 
     public JavaFXRenderer3d(View view, boolean traceGL, boolean debugGL) {
         super(view, traceGL, debugGL);
     }
 
-    public JavaFXRenderer3d(View view) {
-        super(view);
+    public JavaFXRenderer3d(View view, boolean traceGL, boolean debugGL, GLU glu) {
+        super(view, traceGL, debugGL, glu);
     }
 
     @Override
