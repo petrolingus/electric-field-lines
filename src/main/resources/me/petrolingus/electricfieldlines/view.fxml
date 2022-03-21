@@ -11,7 +11,7 @@
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
-<HBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.petrolingus.electricfieldlines.Controller">
+<HBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.petrolingus.electricfieldlines.Controller">
   <children>
       <VBox prefWidth="256.0" spacing="8.0" HBox.hgrow="ALWAYS">
          <children>
@@ -51,6 +51,6 @@
          </padding>
       </VBox>
     <Canvas fx:id="canvas" height="720.0" width="640.0" />
-      <Pane fx:id="plot3d" prefWidth="384.0" HBox.hgrow="ALWAYS" />
+      <Pane fx:id="plot3d" prefWidth="720.0" HBox.hgrow="ALWAYS" />
   </children>
 </HBox>

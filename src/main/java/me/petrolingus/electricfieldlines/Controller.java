@@ -4,6 +4,7 @@ import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Slider;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import me.petrolingus.electricfieldlines.core.DataGenerator;
@@ -97,11 +98,16 @@ public class Controller {
         draw();
 
         // Jzy3d
-//        JavaFXChartFactory factory = new JavaFXChartFactory();
-//        AWTChart chart = getDemoChart(factory, "offscreen");
-//        ImageView imageView = factory.bindImageView(chart);
-//        plot3d.getChildren().add(imageView);
-//        factory.addSceneSizeChangedListener(chart, plot3d);
+        JavaFXChartFactory factory = new JavaFXChartFactory();
+        AWTChart chart = getDemoChart(factory, "offscreen");
+        ImageView imageView = factory.bindImageView(chart);
+        if (plot3d.getChildren().size() == 0) {
+            plot3d.getChildren().add(imageView);
+        } else {
+            plot3d.getChildren().set(0, imageView);
+        }
+        factory.addSceneSizeChangedListener(chart, plot3d);
+        plot3d.autosize();
     }
 
     private void generationOfPoints() {
@@ -332,7 +338,7 @@ public class Controller {
             double value = 0;
             for (int j = 0; j < redPointsCount; j++) {
 
-                if (true) {
+                if (i != j) {
 
                     List<Integer> tempTriangles = new ArrayList<>();
                     for (int k = 0; k < triangles.size(); k++) {
@@ -531,9 +537,9 @@ public class Controller {
         }
 
         final Shape surface = Builder.buildDelaunay(cord3dList);
-        surface.setColorMapper(new ColorMapper(new ColorMapRainbow(), surface.getBounds().getZmin(), surface.getBounds().getZmax(), new org.jzy3d.colors.Color(1, 1, 1, 1.0f)));
+        surface.setColorMapper(new ColorMapper(new ColorMapRainbow(), surface.getBounds().getZmin(), surface.getBounds().getZmax(), new org.jzy3d.colors.Color(1, 1, 1, 0.6f)));
         surface.setFaceDisplayed(true);
-        surface.setWireframeColor(new org.jzy3d.colors.Color(0, 0, 0, 0.5f));
+        surface.setWireframeColor(new org.jzy3d.colors.Color(0, 0, 0, 0.3f));
         surface.setWireframeDisplayed(true);
 
         // -------------------------------

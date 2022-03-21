@@ -9,8 +9,8 @@ public class DataGenerator {
 
     public static double RADIUS = 0.3;
 
-    private static final double OUTER_CHARGE = 9;
-    private static final double INNER_CHARGE = -9;
+    private static final double OUTER_CHARGE = 120;
+    private static final double INNER_CHARGE = -120;
 
     private static final double COS135 = -Math.sqrt(2) / 2;
 
