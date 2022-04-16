@@ -5,8 +5,10 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Slider;
 import javafx.scene.paint.Color;
-import me.petrolingus.electricfieldlines.core.DataGenerator;
+import me.petrolingus.electricfieldlines.core.Algorithm;
 import me.petrolingus.electricfieldlines.core.Triangulation;
+import me.petrolingus.electricfieldlines.core.configuration.TwoCircleConfiguration;
+import me.petrolingus.electricfieldlines.core.generator.DataGenerator;
 import me.petrolingus.electricfieldlines.measure.Timer;
 import me.petrolingus.electricfieldlines.util.Isoline;
 import me.petrolingus.electricfieldlines.util.Point;
@@ -46,7 +48,6 @@ public class Controller {
 
 
     // Solution config
-    public static Vector3D config;
     double min = Double.POSITIVE_INFINITY;
     double max = Double.NEGATIVE_INFINITY;
 
@@ -54,40 +55,34 @@ public class Controller {
     public static List<Point> points;
     public static List<Triangle> triangles;
 
+    private static TwoCircleConfiguration configuration = new TwoCircleConfiguration();
 
     public void initialize() {
-        calcConfig();
+
+        calculateConfiguration();
 
         setupSlider(configurationInnerRadiusSlider);
         setupSlider(configurationCenterShiftSlider);
         setupSlider(configurationClockwiseAngleSlider);
 
-        setupCheckBox(configurationShowCheckBox);
-        setupCheckBox(triangulationCheckBox);
-        setupCheckBox(pointsCheckBox);
-        setupCheckBox(isolineCheckBox);
+        configurationShowCheckBox.selectedProperty().addListener((value) -> draw());
+        triangulationCheckBox.selectedProperty().addListener((value) -> draw());
+        pointsCheckBox.selectedProperty().addListener((value) -> draw());
+        isolineCheckBox.selectedProperty().addListener((value) -> draw());
 
         draw();
     }
 
-    private void calcConfig() {
-        double radius = 0.2 + 0.7 * configurationInnerRadiusSlider.getValue();
-        double shift = (1 - radius) * (0.8 * configurationCenterShiftSlider.getValue());
-        double angle = 2 * Math.PI * configurationClockwiseAngleSlider.getValue();
-        double x = (shift) * Math.cos(angle);
-        double y = (shift) * Math.sin(angle);
-        config = new Vector3D(x, -y, radius);
+    private void calculateConfiguration() {
+        double innerCircleRadius = configurationInnerRadiusSlider.getValue();
+        double innerCircleCenterShift = configurationCenterShiftSlider.getValue();
+        double innerCircleCenterRotation = configurationClockwiseAngleSlider.getValue();
+        configuration.calculateParameters(innerCircleRadius, innerCircleCenterShift, innerCircleCenterRotation);
     }
 
     private void setupSlider(Slider slider) {
         slider.valueProperty().addListener((changed, oldValue, newValue) -> {
-            calcConfig();
-            draw();
-        });
-    }
-
-    private void setupCheckBox(CheckBox checkBox) {
-        checkBox.selectedProperty().addListener((value) -> {
+            calculateConfiguration();
             draw();
         });
     }
@@ -106,10 +101,11 @@ public class Controller {
 
         Timer timer = new Timer();
 
-        generationOfPoints();
+        int n = (int) pointsSlider.getValue();
+        points = new DataGenerator(n).generate(configuration);
         timer.measure("generationOfPoints");
 
-        triangulation();
+        triangles = new Triangulation().create(points, configuration);
         timer.measure("triangulation");
 
         process();
@@ -121,300 +117,11 @@ public class Controller {
         System.out.println("######################################################################");
     }
 
-    private void generationOfPoints() {
-        int n = (int) pointsSlider.getValue();
-        double outerCharge = 1;
-        double innerCharge = -1;
-        double cx = config.getX();
-        double cy = config.getY();
-        double radius = config.getZ();
-        DataGenerator generator = new DataGenerator(n, outerCharge, innerCharge, cx, cy, radius);
-        points = generator.generate();
-    }
-
-    private void triangulation() {
-        Triangulation triangulation = new Triangulation(config.getX(), config.getY());
-        triangles = triangulation.create(points);
-    }
-
     private void process() {
-
-        int whitePointsCount = (int) points.stream().filter(Point::isNotEdge).count();
-
-        Timer timer = new Timer();
-
-        // Link points with triangles
-        for (int i = 0; i < points.size(); i++) {
-            List<Integer> dependencyTriangles = new ArrayList<>();
-            for (int j = 0; j < triangles.size(); j++) {
-                Triangle t = triangles.get(j);
-                int indexV0 = t.getIndexA();
-                int indexV1 = t.getIndexB();
-                int indexV2 = t.getIndexC();
-                boolean cond = (i == indexV0) || (i == indexV1) || (i == indexV2);
-                if (cond) {
-                    dependencyTriangles.add(j);
-                }
-            }
-            points.get(i).setTriangleList(dependencyTriangles);
-        }
-        timer.measure("\t", "link");
-
-        double[][] A = new double[whitePointsCount][whitePointsCount];
-        for (int i = 0; i < whitePointsCount; i++) {
-            for (Integer triangleIndex : points.get(i).getTriangleList()) {
-
-                Triangle triangle = triangles.get(triangleIndex);
-
-                int ida = triangle.getIndexA();
-                int idb = triangle.getIndexB();
-                int idc = triangle.getIndexC();
-
-                Point a = points.get(ida);
-                Point b = points.get(idb);
-                Point c = points.get(idc);
-
-                if (ida == i) {
-                    a = new Point(a.x(), a.y(), 1.0);
-                } else if (idb == i) {
-                    b = new Point(b.x(), b.y(), 1.0);
-                } else if (idc == i) {
-                    c = new Point(c.x(), c.y(), 1.0);
-                } else {
-                    System.err.println("TRIANGLE IN 2D PLANE");
-                    System.exit(-1);
-                }
-
-                Vector3D v0 = new Vector3D(b.x() - a.x(), b.y() - a.y(), b.z() - a.z());
-                Vector3D v1 = new Vector3D(c.x() - a.x(), c.y() - a.y(), c.z() - a.z());
-                Vector3D normal = v1.crossProduct(v0);
-                double ai = normal.getX();
-                double bi = normal.getY();
-                double s = normal.getNorm() / 2.0;
-                A[i][i] += s * (ai * ai + bi * bi);
-            }
-        }
-        for (int i = 0; i < whitePointsCount; i++) {
-
-            List<Integer> iTriangles = points.get(i).getTriangleList();
-
-            for (int j = 0; j < whitePointsCount; j++) {
-
-                if (i == j) continue;
-
-                List<Integer> jTriangles = points.get(j).getTriangleList();
-
-                List<Integer> tempTriangles = iTriangles.stream().filter(jTriangles::contains).toList();
-
-                if (tempTriangles.size() == 0) continue;
-
-                for (Integer triangleIndex : tempTriangles) {
-
-                    Triangle triangle = triangles.get(triangleIndex);
-
-                    int ida = triangle.getIndexA();
-                    int idb = triangle.getIndexB();
-                    int idc = triangle.getIndexC();
-
-                    Point a = points.get(ida);
-                    Point b = points.get(idb);
-                    Point c = points.get(idc);
-
-                    Point pt1 = new Point(a.x(), a.y(), a.z());
-                    Point pt2 = new Point(b.x(), b.y(), b.z());
-                    Point pt3 = new Point(c.x(), c.y(), c.z());
-
-                    if (ida == i) {
-                        if (idb == j) {
-                            pt1 = new Point(a.x(), a.y(), a.z());
-                            pt2 = new Point(b.x(), b.y(), b.z());
-                            pt3 = new Point(c.x(), c.y(), c.z());
-                        }
-                        if (idc == j) {
-                            pt1 = new Point(a.x(), a.y(), a.z());
-                            pt2 = new Point(c.x(), c.y(), c.z());
-                            pt3 = new Point(b.x(), b.y(), b.z());
-                        }
-                    }
-                    if (idb == i) {
-                        if (ida == j) {
-                            pt1 = new Point(b.x(), b.y(), b.z());
-                            pt2 = new Point(a.x(), a.y(), a.z());
-                            pt3 = new Point(c.x(), c.y(), c.z());
-                        }
-                        if (idc == j) {
-                            pt1 = new Point(b.x(), b.y(), b.z());
-                            pt2 = new Point(c.x(), c.y(), c.z());
-                            pt3 = new Point(a.x(), a.y(), a.z());
-                        }
-                    }
-                    if (idc == i) {
-                        if (idb == j) {
-                            pt1 = new Point(c.x(), c.y(), c.z());
-                            pt2 = new Point(b.x(), b.y(), b.z());
-                            pt3 = new Point(a.x(), a.y(), a.z());
-                        }
-                        if (ida == j) {
-                            pt1 = new Point(c.x(), c.y(), c.z());
-                            pt2 = new Point(a.x(), a.y(), a.z());
-                            pt3 = new Point(b.x(), b.y(), b.z());
-                        }
-                    }
-
-                    Vector3D p21i = new Vector3D(pt2.x() - pt1.x(), pt2.y() - pt1.y(), -1);
-                    Vector3D p31i = new Vector3D(pt3.x() - pt1.x(), pt3.y() - pt1.y(), -1);
-                    Vector3D vi = p21i.crossProduct(p31i);
-                    double ai = vi.getX();
-                    double bi = vi.getY();
-
-                    Vector3D p21j = new Vector3D(pt2.x() - pt1.x(), pt2.y() - pt1.y(), 1);
-                    Vector3D p31j = new Vector3D(pt3.x() - pt1.x(), pt3.y() - pt1.y(), 0);
-                    Vector3D vj = p21j.crossProduct(p31j);
-                    double aj = vj.getX();
-                    double bj = vj.getY();
-
-                    double s = vi.getNorm() / 2.0;
-
-                    A[i][j] += s * (ai * aj + bi * bj);
-                }
-            }
-        }
-        timer.measure("\t", "generateA");
-
-        double[] B = new double[whitePointsCount];
-        for (int i = 0; i < whitePointsCount; i++) {
-            List<Integer> iTriangles =  points.get(i).getTriangleList();
-            for (int j = whitePointsCount; j < points.size(); j++) {
-                List<Integer> jTriangles =  points.get(j).getTriangleList();
-                List<Integer> tempTriangles = iTriangles.stream().filter(jTriangles::contains).toList();
-                if (tempTriangles.size() == 0) continue;
-                for (Integer triangleIndex : tempTriangles) {
-
-                    Triangle triangle = triangles.get(triangleIndex);
-
-                    int ida = triangle.getIndexA();
-                    int idb = triangle.getIndexB();
-                    int idc = triangle.getIndexC();
-
-                    Point a = points.get(ida);
-                    Point b = points.get(idb);
-                    Point c = points.get(idc);
-
-                    Point pt1 = new Point(a.x(), a.y(), a.z());
-                    Point pt2 = new Point(b.x(), b.y(), b.z());
-                    Point pt3 = new Point(c.x(), c.y(), c.z());
-
-                    if (ida == i) {
-                        if (idb == j) {
-                            pt1 = new Point(a.x(), a.y(), a.z());
-                            pt2 = new Point(b.x(), b.y(), b.z());
-                            pt3 = new Point(c.x(), c.y(), c.z());
-                        }
-                        if (idc == j) {
-                            pt1 = new Point(a.x(), a.y(), a.z());
-                            pt2 = new Point(c.x(), c.y(), c.z());
-                            pt3 = new Point(b.x(), b.y(), b.z());
-                        }
-                    }
-                    if (idb == i) {
-                        if (ida == j) {
-                            pt1 = new Point(b.x(), b.y(), b.z());
-                            pt2 = new Point(a.x(), a.y(), a.z());
-                            pt3 = new Point(c.x(), c.y(), c.z());
-                        }
-                        if (idc == j) {
-                            pt1 = new Point(b.x(), b.y(), b.z());
-                            pt2 = new Point(c.x(), c.y(), c.z());
-                            pt3 = new Point(a.x(), a.y(), a.z());
-                        }
-                    }
-                    if (idc == i) {
-                        if (idb == j) {
-                            pt1 = new Point(c.x(), c.y(), c.z());
-                            pt2 = new Point(b.x(), b.y(), b.z());
-                            pt3 = new Point(a.x(), a.y(), a.z());
-                        }
-                        if (ida == j) {
-                            pt1 = new Point(c.x(), c.y(), c.z());
-                            pt2 = new Point(a.x(), a.y(), a.z());
-                            pt3 = new Point(b.x(), b.y(), b.z());
-                        }
-                    }
-
-                    Vector3D p21i = new Vector3D(pt2.x() - pt1.x(), pt2.y() - pt1.y(), -1);
-                    Vector3D p31i = new Vector3D(pt3.x() - pt1.x(), pt3.y() - pt1.y(), -1);
-                    Vector3D vi = p21i.crossProduct(p31i);
-                    double ai = vi.getX();
-                    double bi = vi.getY();
-
-                    Vector3D p21j = new Vector3D(pt2.x() - pt1.x(), pt2.y() - pt1.y(), 1);
-                    Vector3D p31j = new Vector3D(pt3.x() - pt1.x(), pt3.y() - pt1.y(), 0);
-                    Vector3D vj = p21j.crossProduct(p31j);
-                    double aj = vj.getX();
-                    double bj = vj.getY();
-
-                    double s = vi.getNorm() / 2.0;
-
-                    B[i] -= points.get(j).getValue() * s * (ai * aj + bi * bj);
-                }
-            }
-        }
-        timer.measure("\t", "generateB");
-
-        // Searching of solution
-        RealMatrix coefficients = new Array2DRowRealMatrix(A, false);
-        DecompositionSolver solver = new QRDecomposition(coefficients).getSolver();
-        RealVector constants = new ArrayRealVector(B, false);
-        RealVector solution = solver.solve(constants);
-        timer.measure("\t", "findSolution");
-
-        // Mapping solution to points value
-        min = solution.getMinValue();
-        max = solution.getMaxValue();
-        for (int i = 0; i < whitePointsCount; i++) {
-            double value = valueMapper(solution.getEntry(i), min, max);
-            points.get(i).setValue(value);
-        }
-        for (int i = whitePointsCount; i < points.size(); i++) {
-            double value = valueMapper(points.get(i).getValue(), min, max);
-            points.get(i).setValue(value);
-        }
-        timer.measure("\t", "mappingSolution");
-
-        // Creating isoline
         int isolineCount = (int) Math.round(isolineCountSlider.getValue());
-        for (Triangle t : triangles) {
-            Point a = points.get(t.getIndexA());
-            Point b = points.get(t.getIndexB());
-            Point c = points.get(t.getIndexC());
-            t.createIsoline(a, b, c, isolineCount);
-        }
-        timer.measure("\t", "createIsoline");
-
-        // Create force line
-        for (int i = 0; i < 100_000; i++) {
-            double x = ThreadLocalRandom.current().nextDouble(-1, 1);
-            double y = ThreadLocalRandom.current().nextDouble(-1, 1);
-            Triangle triangle = null;
-            boolean flag = true;
-            while (flag) {
-                x = ThreadLocalRandom.current().nextDouble(-1, 1);
-                y = ThreadLocalRandom.current().nextDouble(-1, 1);
-                for (Triangle t : triangles) {
-                    if (t.containsPoint(x, y)) {
-                        triangle = t;
-                        flag = false;
-                        break;
-                    }
-                }
-            }
-            triangle.createForceLine(x, y);
-        }
-        timer.measure("\t", "createForceLine");
-    }
-
-    double valueMapper(double value, double min, double max) {
-        return ((value - min) / (max - min));
+        int forceLineCount = (int) Math.round(isolineCountSlider.getValue());
+        Algorithm algorithm = new Algorithm(points, triangles, isolineCount, forceLineCount);
+        algorithm.process();
     }
 
     private void draw() {
@@ -466,9 +173,9 @@ public class Controller {
             graphicsContext.setLineWidth(0.5 * (1 / zoom));
             graphicsContext.setStroke(Color.WHITE);
             graphicsContext.strokeOval(-1, -1, 2, 2);
-            double x = config.getX();
-            double y = config.getY();
-            double r = config.getZ();
+            double x = configuration.getInnerCircleCenterX();
+            double y = configuration.getInnerCircleCenterY();
+            double r = configuration.getInnerCircleRadius();
             graphicsContext.strokeOval(x - r, y - r, 2 * r, 2 * r);
         }
 

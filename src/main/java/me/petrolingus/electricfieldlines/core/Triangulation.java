@@ -1,5 +1,7 @@
 package me.petrolingus.electricfieldlines.core;
 
+import me.petrolingus.electricfieldlines.core.configuration.Configuration;
+import me.petrolingus.electricfieldlines.measure.Timer;
 import me.petrolingus.electricfieldlines.util.Point;
 import me.petrolingus.electricfieldlines.util.Triangle;
 
@@ -8,18 +10,12 @@ import java.util.List;
 
 public class Triangulation {
 
-    private double cx;
-    private double cy;
-
     private final List<Triangle> triangles = new ArrayList<>();
     public static final List<Point> vertices = new ArrayList<>();
 
-    public Triangulation(double cx, double cy) {
-        this.cx = cx;
-        this.cy = cy;
-    }
+    public List<Triangle> create(List<Point> points, Configuration configuration) {
 
-    public List<Triangle> create(List<Point> points) {
+        Timer timer = new Timer();
 
         vertices.clear();
 
@@ -27,7 +23,6 @@ public class Triangulation {
         Point p1 = new Point(1, -1, 0);
         Point p2 = new Point(1, 1, 0);
         Point p3 = new Point(-1, 1, 0);
-        Point p4 = new Point(cx, cy, 0);
 
         vertices.add(p0);
         vertices.add(p1);
@@ -42,16 +37,21 @@ public class Triangulation {
         triangleTwo.calcCircle(p0, p2, p3);
         triangles.add(triangleTwo);
 
-        methodBowerWatson(p4);
+        List<Point> pivots = configuration.getPivotPoints();
+        pivots.forEach(this::methodBowerWatson);
 
-        for (Point p : points) {
-            methodBowerWatson(p);
-        }
+        timer.measure("\t", "preTriangulation");
+
+        points.forEach(this::methodBowerWatson);
+
+        timer.measure("\t", "doneTriangulation");
+
+        int specialNumber = 4 + pivots.size();
 
         // Remove super-structure triangles and Remove triangles in inner circle
         triangles.removeIf(t -> {
             boolean res = false;
-            for (int i = 0; i < 5; i++) {
+            for (int i = 0; i < specialNumber; i++) {
                 boolean c0 = t.getIndexA() == i;
                 boolean c1 = t.getIndexB() == i;
                 boolean c2 = t.getIndexC() == i;
@@ -62,10 +62,12 @@ public class Triangulation {
 
         // Change all indexes
         for (Triangle triangle : triangles) {
-            triangle.setIndexA(triangle.getIndexA() - 5);
-            triangle.setIndexB(triangle.getIndexB() - 5);
-            triangle.setIndexC(triangle.getIndexC() - 5);
+            triangle.setIndexA(triangle.getIndexA() - specialNumber);
+            triangle.setIndexB(triangle.getIndexB() - specialNumber);
+            triangle.setIndexC(triangle.getIndexC() - specialNumber);
         }
+
+        timer.measure("\t", "removeSuperStructure");
 
         return triangles;
     }
