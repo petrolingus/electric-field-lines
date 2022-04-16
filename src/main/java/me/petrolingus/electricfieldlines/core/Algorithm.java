@@ -1,23 +1,27 @@
 package me.petrolingus.electricfieldlines.core;
 
+import me.petrolingus.electricfieldlines.core.configuration.Configuration;
 import me.petrolingus.electricfieldlines.measure.Timer;
 import me.petrolingus.electricfieldlines.util.Point;
 import me.petrolingus.electricfieldlines.util.Triangle;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 import org.apache.commons.math3.linear.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Objects;
 
 public class Algorithm {
 
     private final List<Point> points;
     private final List<Triangle> triangles;
+    private final Configuration configuration;
     private final int isolineCount;
     private final int forceLineCount;
 
-    public Algorithm(List<Point> points, List<Triangle> triangles, int isolineCount, int forceLineCount) {
+    public Algorithm(Configuration configuration, List<Point> points, List<Triangle> triangles, int isolineCount, int forceLineCount) {
+        this.configuration = configuration;
         this.points = points;
         this.triangles = triangles;
         this.isolineCount = isolineCount;
@@ -27,7 +31,6 @@ public class Algorithm {
     public void process() {
 
         int whitePointsCount = (int) points.stream().filter(Point::isNotEdge).count();
-        System.out.println(whitePointsCount);
 
         Timer timer = new Timer();
 
@@ -279,24 +282,41 @@ public class Algorithm {
         timer.measure("\t", "createIsoline");
 
         // Create force line
-        for (int i = 0; i < 1000; i++) {
-            double x = ThreadLocalRandom.current().nextDouble(-1, 1);
-            double y = ThreadLocalRandom.current().nextDouble(-1, 1);
-            Triangle triangle = null;
-            boolean flag = true;
-            while (flag) {
-                x = ThreadLocalRandom.current().nextDouble(-1, 1);
-                y = ThreadLocalRandom.current().nextDouble(-1, 1);
-                for (Triangle t : triangles) {
-                    if (t.containsPoint(x, y)) {
-                        triangle = t;
-                        flag = false;
-                        break;
-                    }
+//        for (int i = 0; i < 1000; i++) {
+//            double x = ThreadLocalRandom.current().nextDouble(-1, 1);
+//            double y = ThreadLocalRandom.current().nextDouble(-1, 1);
+//            Triangle triangle = null;
+//            boolean flag = true;
+//            while (flag) {
+//                x = ThreadLocalRandom.current().nextDouble(-1, 1);
+//                y = ThreadLocalRandom.current().nextDouble(-1, 1);
+//                for (Triangle t : triangles) {
+//                    if (t.containsPoint(x, y)) {
+//                        triangle = t;
+//                        flag = false;
+//                        break;
+//                    }
+//                }
+//            }
+//            triangle.createForceLine(x, y);
+//        }
+
+        List<Point> innerBound = configuration.getInnerBound(forceLineCount);
+        for (Point p : innerBound) {
+            double x = p.x();
+            double y = p.y();
+            Vector2D end = new Vector2D(x, y);
+            while (end.getNorm() < configuration.getOuterBoundDistance()) {
+                Vector2D finalEnd = end;
+                Triangle triangle = triangles.stream().parallel().filter(t -> t.containsPoint(finalEnd.getX(), finalEnd.getY())).findFirst().orElse(null);
+                if (triangle != null) {
+                    end = triangle.createForceLine(end.getX(), end.getY());
+                } else {
+                    break;
                 }
             }
-            triangle.createForceLine(x, y);
         }
+
         timer.measure("\t", "createForceLine");
     }
 

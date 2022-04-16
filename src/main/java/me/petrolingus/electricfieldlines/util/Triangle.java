@@ -17,6 +17,12 @@ public class Triangle {
     private int indexB;
     private int indexC;
 
+    private Point valueA;
+
+    private Point valueB;
+
+    private Point valueC;
+
     private double cx;
     private double cy;
     private double r;
@@ -31,21 +37,20 @@ public class Triangle {
 
     public List<Vector2D> forceLine = new ArrayList<>();
 
-    public Triangle(int indexA, int indexB, int indexC) {
+    public Triangle(int indexA, int indexB, int indexC, Point valueA, Point valueB, Point valueC) {
         this.indexA = indexA;
         this.indexB = indexB;
         this.indexC = indexC;
+        this.valueA = valueA;
+        this.valueB = valueB;
+        this.valueC = valueC;
 
-        Point a = Triangulation.vertices.get(indexA);
-        Point b = Triangulation.vertices.get(indexB);
-        Point c = Triangulation.vertices.get(indexC);
-
-        x3 = c.x();
-        y3 = c.y();
-        y23 = b.y() - c.y();
-        x32 = c.x() - b.x();
-        y31 = c.y() - a.y();
-        x13 = a.x() - c.x();
+        x3 = valueC.x();
+        y3 = valueC.y();
+        y23 = valueB.y() - valueC.y();
+        x32 = valueC.x() - valueB.x();
+        y31 = valueC.y() - valueA.y();
+        x13 = valueA.x() - valueC.x();
         det = y23 * x13 - x32 * y31;
         minD = Math.min(det, 0);
         maxD = Math.max(det, 0);
@@ -118,8 +123,8 @@ public class Triangle {
         double x3 = points.get(2).x();
         double y3 = points.get(2).y();
 
-        double begin = 0;
-        double end = 1;
+        double begin = 0.1;
+        double end = 0.9;
         double step = (end - begin) / (n - 1);
 
         for (int i = 0; i < n; i++) {
@@ -152,27 +157,26 @@ public class Triangle {
 
     }
 
-    public void createForceLine(double x, double y) {
-        Point a = Controller.points.get(indexA);
-        Point b = Controller.points.get(indexB);
-        Point c = Controller.points.get(indexC);
+    public Vector2D createForceLine(double x, double y) {
 
-//        Vector3D a = new Vector3D(p1.x(), p1.y(), p1.getValue());
-//        Vector3D b = new Vector3D(p2.x(), p2.y(), p2.getValue());
-//        Vector3D c = new Vector3D(p3.x(), p3.y(), p3.getValue());
+        Point a = valueA;
+        Point b = valueB;
+        Point c = valueC;
+
         Vector3D v0 = new Vector3D(b.x() - a.x(), b.y() - a.y(), b.getValue() - a.getValue());
         Vector3D v1 = new Vector3D(c.x() - a.x(), c.y() - a.y(), c.getValue() - a.getValue());
-        Vector3D normal = v1.crossProduct(v0).normalize().scalarMultiply(0.05);
+        Vector3D normal = v1.crossProduct(v0).normalize().scalarMultiply(0.01);
 //        Vector3D normal = v1.crossProduct(v0);
         double ai = normal.getX();
         double bi = normal.getY();
-        if (normal.getZ() < 0) {
+        if (normal.getZ() > 0) {
             ai = -ai;
             bi = -bi;
         }
 //        System.out.println(ai + ":" + bi);
         forceLine.add(new Vector2D(x, y));
         forceLine.add(new Vector2D(x + ai, y + bi));
+        return forceLine.get(forceLine.size() - 1);
     }
 
     public boolean containsPoint(double x, double y) {

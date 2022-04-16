@@ -29,11 +29,11 @@ public class Triangulation {
         vertices.add(p2);
         vertices.add(p3);
 
-        Triangle triangleOne = new Triangle(0, 1, 2);
+        Triangle triangleOne = new Triangle(0, 1, 2, p0, p1, p2);
         triangleOne.calcCircle(p0, p1, p2);
         triangles.add(triangleOne);
 
-        Triangle triangleTwo = new Triangle(0, 2, 3);
+        Triangle triangleTwo = new Triangle(0, 2, 3, p0, p2, p3);
         triangleTwo.calcCircle(p0, p2, p3);
         triangles.add(triangleTwo);
 
@@ -108,10 +108,10 @@ public class Triangulation {
         triangles.removeAll(badTriangles);
 
         for (List<Integer> edge : polygon) {
-            Triangle triangle = new Triangle(edge.get(0), edge.get(1), vertices.size() - 1);
             Point a = vertices.get(edge.get(0));
             Point b = vertices.get(edge.get(1));
             Point c = vertices.get(vertices.size() - 1);
+            Triangle triangle = new Triangle(edge.get(0), edge.get(1), vertices.size() - 1, a, b, c);
             triangle.calcCircle(a, b, c);
             triangles.add(triangle);
         }

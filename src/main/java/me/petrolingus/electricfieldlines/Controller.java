@@ -1,8 +1,14 @@
 package me.petrolingus.electricfieldlines;
 
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.concurrent.WorkerStateEvent;
+import javafx.event.EventHandler;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.Slider;
 import javafx.scene.paint.Color;
 import me.petrolingus.electricfieldlines.core.Algorithm;
@@ -42,14 +48,12 @@ public class Controller {
 
     // Solution
     public CheckBox pointsCheckBox;
+    public Button button;
 
     // Scene
     public Canvas canvas;
 
-
-    // Solution config
-    double min = Double.POSITIVE_INFINITY;
-    double max = Double.NEGATIVE_INFINITY;
+    public ProgressIndicator progressIndicator;
 
     // Free shared collections
     public static List<Point> points;
@@ -57,7 +61,23 @@ public class Controller {
 
     private static TwoCircleConfiguration configuration = new TwoCircleConfiguration();
 
+    private static Service service;
+
     public void initialize() {
+
+        service = new Service();
+
+        service.setOnSucceeded(event -> {
+            points = service.getPoints();
+            triangles = service.getTriangles();
+            service.reset();
+            draw();
+        });
+
+        progressIndicator.progressProperty().bind(service.progressProperty());
+        progressIndicator.visibleProperty().bind(service.runningProperty());
+
+        button.disableProperty().bind(service.runningProperty());
 
         calculateConfiguration();
 
@@ -69,6 +89,21 @@ public class Controller {
         triangulationCheckBox.selectedProperty().addListener((value) -> draw());
         pointsCheckBox.selectedProperty().addListener((value) -> draw());
         isolineCheckBox.selectedProperty().addListener((value) -> draw());
+
+        pointsSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            double value = 10 * Math.round(newValue.doubleValue() / 10);
+            pointsSlider.setValue(value);
+        });
+
+        isolineCountSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            double value = 5 * Math.round(newValue.doubleValue() / 5);
+            isolineCountSlider.setValue(value);
+        });
+
+        fieldLineCountSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            double value = 100 * Math.round(newValue.doubleValue() / 100);
+            fieldLineCountSlider.setValue(value);
+        });
 
         draw();
     }
@@ -88,40 +123,19 @@ public class Controller {
     }
 
     public void onFindSolution() {
-
-        if (triangles != null) {
-            triangles.clear();
-            min = Double.POSITIVE_INFINITY;
-            max = Double.NEGATIVE_INFINITY;
-        }
-
-        if (points != null) {
-            points.clear();
-        }
-
-        Timer timer = new Timer();
-
-        int n = (int) pointsSlider.getValue();
-        points = new DataGenerator(n).generate(configuration);
-        timer.measure("generationOfPoints");
-
-        triangles = new Triangulation().create(points, configuration);
-        timer.measure("triangulation");
-
-        process();
-        timer.measure("process");
-
-        draw();
-        timer.measure("draw");
-
-        System.out.println("######################################################################");
+        clearCanvas();
+        service.setConfiguration(configuration);
+        service.setPointsSliderValue(pointsSlider.getValue());
+        service.setIsolineCountSliderValue(isolineCountSlider.getValue());
+        service.setFieldLineCountSliderValue(fieldLineCountSlider.getValue());
+        service.start();
     }
 
-    private void process() {
-        int isolineCount = (int) Math.round(isolineCountSlider.getValue());
-        int forceLineCount = (int) Math.round(isolineCountSlider.getValue());
-        Algorithm algorithm = new Algorithm(points, triangles, isolineCount, forceLineCount);
-        algorithm.process();
+    private void clearCanvas() {
+        GraphicsContext graphicsContext = canvas.getGraphicsContext2D();
+        graphicsContext.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
+        graphicsContext.setFill(Color.BLACK);
+        graphicsContext.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
     }
 
     private void draw() {
@@ -180,12 +194,12 @@ public class Controller {
         }
 
         // Draw force line
-        if (triangles != null) {
-            graphicsContext.setLineWidth(0.5 * (1 / zoom));
-            graphicsContext.setStroke(Color.LIGHTGREEN);
+        if (fieldLineCheckBox.isSelected() && triangles != null) {
+            graphicsContext.setLineWidth((1 / zoom));
+            graphicsContext.setStroke(Color.LIGHTSKYBLUE);
             for (Triangle t : triangles) {
                 if (t.forceLine.isEmpty()) continue;
-                for (int i = 0; i < t.forceLine.size() / 2; i += 2) {
+                for (int i = 0; i < t.forceLine.size() - 1; i += 2) {
                     double x1 = t.forceLine.get(i).getX();
                     double y1 = t.forceLine.get(i).getY();
                     double x2 = t.forceLine.get(i + 1).getX();
@@ -197,7 +211,7 @@ public class Controller {
 
         // Draw isoline
         if (isolineCheckBox.isSelected() && triangles != null) {
-            graphicsContext.setLineWidth(0.8 * (1 / zoom));
+            graphicsContext.setLineWidth((1 / zoom));
             graphicsContext.setStroke(Color.YELLOW);
             for (Triangle t : triangles) {
                 if (t.isoline.isEmpty()) {

@@ -40,65 +40,65 @@ public class TwoCircleConfiguration implements Configuration {
         double step = 2.0 / (n - 1);
 
 //        ##############################################################################################################
-//        int indexOuter135 = -1;
-//        int indexInner135xLeft = -1;
-//        int indexInner135xRight = -1;
-//        int indexInner135yLeft = -1;
-//        int indexInner135yRight = -1;
-//
-//        for (int i = 0; i < n; i++) {
-//            for (int j = 0; j < n; j++) {
-//                double x = -1 + j * step;
-//                double y = -1 + i * step;
-//                indexOuter135 = (indexOuter135 == -1 && x > COS135) ? j : indexOuter135;
-//                indexInner135xLeft = (indexInner135xLeft == -1 && x > innerCircleCenterX + innerCircleRadius * COS135) ? j : indexInner135xLeft;
-//                indexInner135xRight = (indexInner135xRight == -1 && x > innerCircleCenterX - innerCircleRadius * COS135) ? j : indexInner135xRight;
-//                indexInner135yLeft = (indexInner135yLeft == -1 && y > innerCircleCenterY + innerCircleRadius * COS135) ? i : indexInner135yLeft;
-//                indexInner135yRight = (indexInner135yRight == -1 && y > innerCircleCenterY - innerCircleRadius * COS135) ? i : indexInner135yRight;
-//            }
-//        }
-//
-//        // Add outer edge points
-//        for (int i = indexOuter135; i < n - indexOuter135; i++) {
-//            double a = -1 + i * step;
-//            double b = Math.sqrt(1 - a * a);
-//            points.add(new Point(a, -b, 0, false, 1));
-//            points.add(new Point(a, b, 0, false, 1));
-//            points.add(new Point(b, a, 0, false, 1));
-//            points.add(new Point(-b, a, 0, false, 1));
-//        }
-//
-//        // Add inner edge points
-//        for (int i = indexInner135xLeft; i < indexInner135xRight; i++) {
-//            double a = -1 + i * step;
-//            double b = Math.sqrt(Math.pow(innerCircleRadius, 2) - Math.pow(a - innerCircleCenterX, 2));
-//            points.add(new Point(a, -b + innerCircleCenterY, 0, false, -1));
-//            points.add(new Point(a, b + innerCircleCenterY, 0, false, -1));
-//        }
-//        for (int i = indexInner135yLeft; i < indexInner135yRight; i++) {
-//            double a = -1 + i * step;
-//            double b = Math.sqrt(Math.pow(innerCircleRadius, 2) - Math.pow(a - innerCircleCenterY, 2));
-//            points.add(new Point(b + innerCircleCenterX, a, 0, false, -1));
-//            points.add(new Point(-b + innerCircleCenterX, a, 0, false, -1));
-//        }
+        int indexOuter135 = -1;
+        int indexInner135xLeft = -1;
+        int indexInner135xRight = -1;
+        int indexInner135yLeft = -1;
+        int indexInner135yRight = -1;
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                double x = -1 + j * step;
+                double y = -1 + i * step;
+                indexOuter135 = (indexOuter135 == -1 && x > COS135) ? j : indexOuter135;
+                indexInner135xLeft = (indexInner135xLeft == -1 && x > innerCircleCenterX + innerCircleRadius * COS135) ? j : indexInner135xLeft;
+                indexInner135xRight = (indexInner135xRight == -1 && x > innerCircleCenterX - innerCircleRadius * COS135) ? j : indexInner135xRight;
+                indexInner135yLeft = (indexInner135yLeft == -1 && y > innerCircleCenterY + innerCircleRadius * COS135) ? i : indexInner135yLeft;
+                indexInner135yRight = (indexInner135yRight == -1 && y > innerCircleCenterY - innerCircleRadius * COS135) ? i : indexInner135yRight;
+            }
+        }
+
+        // Add outer edge points
+        for (int i = indexOuter135; i < n - indexOuter135; i++) {
+            double a = -1 + i * step;
+            double b = Math.sqrt(1 - a * a);
+            points.add(new Point(a, -b, 0, false, 1));
+            points.add(new Point(a, b, 0, false, 1));
+            points.add(new Point(b, a, 0, false, 1));
+            points.add(new Point(-b, a, 0, false, 1));
+        }
+
+        // Add inner edge points
+        for (int i = indexInner135xLeft; i < indexInner135xRight; i++) {
+            double a = -1 + i * step;
+            double b = Math.sqrt(Math.pow(innerCircleRadius, 2) - Math.pow(a - innerCircleCenterX, 2));
+            points.add(new Point(a, -b + innerCircleCenterY, 0, false, -1));
+            points.add(new Point(a, b + innerCircleCenterY, 0, false, -1));
+        }
+        for (int i = indexInner135yLeft; i < indexInner135yRight; i++) {
+            double a = -1 + i * step;
+            double b = Math.sqrt(Math.pow(innerCircleRadius, 2) - Math.pow(a - innerCircleCenterY, 2));
+            points.add(new Point(b + innerCircleCenterX, a, 0, false, -1));
+            points.add(new Point(-b + innerCircleCenterX, a, 0, false, -1));
+        }
 //        ##############################################################################################################
 
 
-        int count1 = (int) Math.floor(2 * Math.PI / step);
-        for (int i = 0; i < count1; i++) {
-            double phi = step * i;
-            double x = Math.cos(phi);
-            double y = Math.sin(phi);
-            points.add(new Point(x, y, 0, false, 1));
-        }
-
-        int count2 = (int) Math.floor(2 * Math.PI * innerCircleRadius / step);
-        for (int i = 0; i < count2; i++) {
-            double phi = step * i / innerCircleRadius;
-            double x = innerCircleCenterX + innerCircleRadius * Math.cos(phi);
-            double y = innerCircleCenterY + innerCircleRadius * Math.sin(phi);
-            points.add(new Point(x, y, 0, false, -1));
-        }
+//        int count1 = (int) Math.floor(2 * Math.PI / step);
+//        for (int i = 0; i < count1; i++) {
+//            double phi = step * i;
+//            double x = Math.cos(phi);
+//            double y = Math.sin(phi);
+//            points.add(new Point(x, y, 0, false, 1));
+//        }
+//
+//        int count2 = (int) Math.floor(2 * Math.PI * innerCircleRadius / step);
+//        for (int i = 0; i < count2; i++) {
+//            double phi = step * i / innerCircleRadius;
+//            double x = innerCircleCenterX + innerCircleRadius * Math.cos(phi);
+//            double y = innerCircleCenterY + innerCircleRadius * Math.sin(phi);
+//            points.add(new Point(x, y, 0, false, -1));
+//        }
 
         return points;
     }
@@ -114,5 +114,26 @@ public class TwoCircleConfiguration implements Configuration {
     @Override
     public List<Point> getPivotPoints() {
         return List.of(new Point(innerCircleCenterX, innerCircleCenterY, 0));
+    }
+
+    @Override
+    public List<Point> getInnerBound(int quality) {
+
+        double step = 2 * Math.PI / quality;
+
+        List<Point> points = new ArrayList<>();
+        for (int i = 0; i < quality; i++) {
+            double phi = i * step;
+            double x = innerCircleCenterX + innerCircleRadius * Math.cos(phi);
+            double y = innerCircleCenterY + innerCircleRadius * Math.sin(phi);
+            points.add(new Point(x, y, 0));
+        }
+
+        return points;
+    }
+
+    @Override
+    public double getOuterBoundDistance() {
+        return 1;
     }
 }

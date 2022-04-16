@@ -12,4 +12,8 @@ public interface Configuration {
 
     List<Point> getPivotPoints();
 
+    List<Point> getInnerBound(int quality);
+
+    double getOuterBoundDistance();
+
 }
