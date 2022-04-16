@@ -47,7 +47,7 @@ public class Controller {
     public static List<Point> points;
     public static List<Triangle> triangles;
 
-    private static TwoCircleConfiguration configuration = new TwoCircleConfiguration();
+    private static final TwoCircleConfiguration configuration = new TwoCircleConfiguration();
 
     private static Service service;
 
@@ -206,14 +206,6 @@ public class Controller {
                     continue;
                 }
                 for (Isoline isoline : t.isoline) {
-
-//                    double value = isoline.getValue();
-//                    if (value > 0.5) {
-//                        graphicsContext.setStroke(Color.BLACK.interpolate(Color.RED, 2 * (value - 0.5)));
-//                    } else {
-//                        graphicsContext.setStroke(Color.BLUE.interpolate(Color.BLACK, 2 * value));
-//                    }
-
                     double x1 = isoline.getX1();
                     double y1 = isoline.getY1();
                     double x2 = isoline.getX2();
