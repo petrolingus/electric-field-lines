@@ -1,5 +1,7 @@
 package me.petrolingus.electricfieldlines.util;
 
+import javafx.scene.paint.Color;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -14,6 +16,8 @@ public class Triangle {
     private double cx;
     private double cy;
     private double r;
+
+    public Color color;
 
     public List<List<Point>> isolines = new ArrayList<>();
 
@@ -99,9 +103,9 @@ public class Triangle {
         double x3 = points.get(2).x();
         double y3 = points.get(2).y();
 
-        int n = 10;
-        double begin = 0.1;
-        double end = 0.9;
+        int n = 100;
+        double begin = 0;
+        double end = 1;
         double step = (end - begin) / (n - 1);
 
         for (int i = 0; i < n; i++) {
