@@ -17,10 +17,6 @@ public class Service extends javafx.concurrent.Service<Void> {
     private List<Point> points;
     private List<Triangle> triangles;
 
-    // Solution config
-    double min = Double.POSITIVE_INFINITY;
-    double max = Double.NEGATIVE_INFINITY;
-
     private double pointsSliderValue;
     private double isolineCountSliderValue;
     private double fieldLineCountSliderValue;
@@ -33,8 +29,6 @@ public class Service extends javafx.concurrent.Service<Void> {
 
                 if (triangles != null) {
                     triangles.clear();
-                    min = Double.POSITIVE_INFINITY;
-                    max = Double.NEGATIVE_INFINITY;
                 }
 
                 if (points != null) {
