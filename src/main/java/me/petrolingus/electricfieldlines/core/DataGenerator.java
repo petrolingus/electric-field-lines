@@ -67,24 +67,24 @@ public class DataGenerator {
         for (int i = indexOuter135; i < n - indexOuter135; i++) {
             double a = -1 + i * step;
             double b = Math.sqrt(1 - a * a);
-            points.add(new Point(a, -b, 0, true, outerCharge));
-            points.add(new Point(a, b, 0, true, outerCharge));
-            points.add(new Point(b, a, 0, true, outerCharge));
-            points.add(new Point(-b, a, 0, true, outerCharge));
+            points.add(new Point(a, -b, 0, false, outerCharge));
+            points.add(new Point(a, b, 0, false, outerCharge));
+            points.add(new Point(b, a, 0, false, outerCharge));
+            points.add(new Point(-b, a, 0, false, outerCharge));
         }
 
         // Add inner edge points
         for (int i = indexInner135xLeft; i < indexInner135xRight; i++) {
             double a = -1 + i * step;
             double b = Math.sqrt(radius * radius - (a - cx) * (a - cx));
-            points.add(new Point(a, -b + cy, 0, true, innerCharge));
-            points.add(new Point(a, b + cy, 0, true, innerCharge));
+            points.add(new Point(a, -b + cy, 0, false, innerCharge));
+            points.add(new Point(a, b + cy, 0, false, innerCharge));
         }
         for (int i = indexInner135yLeft; i < indexInner135yRight; i++) {
             double a = -1 + i * step;
             double b = Math.sqrt(radius * radius - (a - cy) * (a - cy));
-            points.add(new Point(b + cx, a, 0, true, innerCharge));
-            points.add(new Point(-b + cx, a, 0, true, innerCharge));
+            points.add(new Point(b + cx, a, 0, false, innerCharge));
+            points.add(new Point(-b + cx, a, 0, false, innerCharge));
         }
 
         return points;

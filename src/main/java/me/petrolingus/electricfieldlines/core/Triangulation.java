@@ -12,7 +12,7 @@ public class Triangulation {
     private double cy;
 
     private final List<Triangle> triangles = new ArrayList<>();
-    private final List<Point> vertices = new ArrayList<>();
+    public static final List<Point> vertices = new ArrayList<>();
 
     public Triangulation(double cx, double cy) {
         this.cx = cx;
@@ -20,6 +20,8 @@ public class Triangulation {
     }
 
     public List<Triangle> create(List<Point> points) {
+
+        vertices.clear();
 
         Point p0 = new Point(-1, -1, 0);
         Point p1 = new Point(1, -1, 0);

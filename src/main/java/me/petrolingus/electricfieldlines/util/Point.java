@@ -7,20 +7,20 @@ public class Point {
     private final double x;
     private final double y;
     private final double z;
-    private final boolean isEdge;
+    private final boolean isNotEdge;
 
     private double value;
     private List<Integer> triangleList;
 
     public Point(double x, double y, double z) {
-        this(x, y, z, false, 0);
+        this(x, y, z, true, 0);
     }
 
-    public Point(double x, double y, double z, boolean isEdge, double value) {
+    public Point(double x, double y, double z, boolean isNotEdge, double value) {
         this.x = x;
         this.y = y;
         this.z = z;
-        this.isEdge = isEdge;
+        this.isNotEdge = isNotEdge;
         this.value = value;
     }
 
@@ -40,8 +40,8 @@ public class Point {
         return z;
     }
 
-    public boolean isEdge() {
-        return isEdge;
+    public boolean isNotEdge() {
+        return isNotEdge;
     }
 
     public double getValue() {

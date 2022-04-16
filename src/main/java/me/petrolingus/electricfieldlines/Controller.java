@@ -1,28 +1,18 @@
 package me.petrolingus.electricfieldlines;
 
-import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Slider;
-import javafx.scene.control.TextField;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import me.petrolingus.electricfieldlines.core.DataGenerator;
 import me.petrolingus.electricfieldlines.core.Triangulation;
+import me.petrolingus.electricfieldlines.measure.Timer;
+import me.petrolingus.electricfieldlines.util.Isoline;
 import me.petrolingus.electricfieldlines.util.Point;
 import me.petrolingus.electricfieldlines.util.Triangle;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.linear.*;
-import org.jzy3d.chart.AWTChart;
-import org.jzy3d.colors.ColorMapper;
-import org.jzy3d.colors.colormaps.ColorMapRainbow;
-import org.jzy3d.javafx.JavaFXChartFactory;
-import org.jzy3d.maths.Coord3d;
-import org.jzy3d.plot3d.builder.Builder;
-import org.jzy3d.plot3d.primitives.Shape;
-import org.jzy3d.plot3d.rendering.canvas.Quality;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,73 +20,60 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class Controller {
 
-    @FXML
-    private Slider radiusSlider;
-    @FXML
-    private Slider shiftSlider;
-    @FXML
-    private Slider angleSlider;
-    @FXML
-    private TextField chargeTextField;
+    // Configuration
+    public CheckBox configurationShowCheckBox;
+    public Slider configurationInnerRadiusSlider;
+    public Slider configurationCenterShiftSlider;
+    public Slider configurationClockwiseAngleSlider;
 
-    @FXML
-    private Slider pointsSlider;
+    // Triangulation
+    public CheckBox triangulationCheckBox;
+    public Slider pointsSlider;
 
-    @FXML
-    private CheckBox configurationCheckBox;
-    @FXML
-    private CheckBox triangulationCheckBox;
-    @FXML
-    private CheckBox pointsCheckBox;
-    @FXML
-    private CheckBox isolineCheckBox;
+    // Isoline
+    public CheckBox isolineCheckBox;
+    public Slider isolineCountSlider;
 
-    @FXML
-    private TextField pointsIndicator;
+    // Field line
+    public CheckBox fieldLineCheckBox;
+    public Slider fieldLineCountSlider;
 
-    @FXML
-    private Canvas canvas;
+    // Solution
+    public CheckBox pointsCheckBox;
 
-    @FXML
-    private Pane plot3d;
+    // Scene
+    public Canvas canvas;
 
+
+    // Solution config
+    public static Vector3D config;
     double min = Double.POSITIVE_INFINITY;
     double max = Double.NEGATIVE_INFINITY;
 
+    // Free shared collections
     public static List<Point> points;
     public static List<Triangle> triangles;
 
-    public static Vector3D config;
-
-    public boolean one = true;
 
     public void initialize() {
         calcConfig();
 
-        setupSlider(radiusSlider);
-        setupSlider(shiftSlider);
-        setupSlider(angleSlider);
+        setupSlider(configurationInnerRadiusSlider);
+        setupSlider(configurationCenterShiftSlider);
+        setupSlider(configurationClockwiseAngleSlider);
 
-        setupCheckBox(configurationCheckBox);
+        setupCheckBox(configurationShowCheckBox);
         setupCheckBox(triangulationCheckBox);
         setupCheckBox(pointsCheckBox);
         setupCheckBox(isolineCheckBox);
-
-//        pointsSlider.valueChangingProperty().bind(pointsIndicator.promptTextProperty().);
-
-        pointsIndicator.textProperty().bind(pointsSlider.valueProperty().asString("%.0f"));
-
-
-
-
 
         draw();
     }
 
     private void calcConfig() {
-        double radius = 0.2 + 0.7 * radiusSlider.getValue();
-        double shift = (1 - radius) * (0.8 * shiftSlider.getValue());
-        double angle = 2 * Math.PI * angleSlider.getValue();
+        double radius = 0.2 + 0.7 * configurationInnerRadiusSlider.getValue();
+        double shift = (1 - radius) * (0.8 * configurationCenterShiftSlider.getValue());
+        double angle = 2 * Math.PI * configurationClockwiseAngleSlider.getValue();
         double x = (shift) * Math.cos(angle);
         double y = (shift) * Math.sin(angle);
         config = new Vector3D(x, -y, radius);
@@ -115,7 +92,7 @@ public class Controller {
         });
     }
 
-    public void onButtonPressed() {
+    public void onFindSolution() {
 
         if (triangles != null) {
             triangles.clear();
@@ -127,45 +104,27 @@ public class Controller {
             points.clear();
         }
 
-        double start = System.nanoTime();
+        Timer timer = new Timer();
 
         generationOfPoints();
-        double generationOfPointsEnd = System.nanoTime();
-        System.out.println((generationOfPointsEnd - start) / 1_000_000 + " ms [generationOfPoints]");
+        timer.measure("generationOfPoints");
 
         triangulation();
-        double triangulationEnd = System.nanoTime();
-        System.out.println((triangulationEnd - generationOfPointsEnd) / 1_000_000 + " ms [triangulation]");
+        timer.measure("triangulation");
 
         process();
-        double processEnd = System.nanoTime();
-        System.out.println((processEnd - triangulationEnd) / 1_000_000 + " ms [process]");
+        timer.measure("process");
 
         draw();
-        double drawEnd = System.nanoTime();
-        System.out.println((drawEnd - processEnd) / 1_000_000 + " ms [draw]");
-
-        // Jzy3d
-//        JavaFXChartFactory factory = new JavaFXChartFactory();
-//        AWTChart chart = getDemoChart(factory, "offscreen");
-//        ImageView imageView = factory.bindImageView(chart);
-//        if (plot3d.getChildren().size() == 0) {
-//            plot3d.getChildren().add(imageView);
-//        } else {
-//            plot3d.getChildren().set(0, imageView);
-//        }
-//        factory.addSceneSizeChangedListener(chart, plot3d);
-//        plot3d.autosize();
-//        double plot3dEnd = System.nanoTime();
-//        System.out.println((plot3dEnd - drawEnd) + " ns [plot3d]");
+        timer.measure("draw");
 
         System.out.println("######################################################################");
     }
 
     private void generationOfPoints() {
         int n = (int) pointsSlider.getValue();
-        double outerCharge = Double.parseDouble(chargeTextField.getText());
-        double innerCharge = -outerCharge;
+        double outerCharge = 1;
+        double innerCharge = -1;
         double cx = config.getX();
         double cy = config.getY();
         double radius = config.getZ();
@@ -180,21 +139,10 @@ public class Controller {
 
     private void process() {
 
-//        System.out.println("Triangles:" + triangles.size());
-//        System.out.println("Points:" + points.size());
+        int whitePointsCount = (int) points.stream().filter(Point::isNotEdge).count();
 
-        int whitePointsCount = 0;
-        for (Point p : points) {
-            if (!p.isEdge()) {
-                whitePointsCount++;
-            }
-        }
-//        System.out.println("WhitePoints:" + whitePointsCount);
+        Timer timer = new Timer();
 
-        int redPointsCount = points.size() - whitePointsCount;
-//        System.out.println("RedPoints:" + redPointsCount);
-
-        double linkStart = System.nanoTime();
         // Link points with triangles
         for (int i = 0; i < points.size(); i++) {
             List<Integer> dependencyTriangles = new ArrayList<>();
@@ -210,43 +158,9 @@ public class Controller {
             }
             points.get(i).setTriangleList(dependencyTriangles);
         }
-        double linkStop = System.nanoTime();
-        System.out.println("\t" + (linkStop - linkStart) / 1_000_000 + " ms [link]");
+        timer.measure("\t", "link");
 
-        // USE FOR DEBUG NEIGHBOURS
-//        for (int i = 0; i < triangles.size(); i++) {
-//            Triangle t = triangles.get(i);
-//            int a = t.getIndexA();
-//            int b = t.getIndexB();
-//            int c = t.getIndexC();
-//
-//            Point p0 = points.get(a);
-//            boolean cond0 = false;
-//            for (Integer index0 : p0.getTriangleList()) {
-//                cond0 |= index0 == i;
-//            }
-//
-//            Point p1 = points.get(b);
-//            boolean cond1 = false;
-//            for (Integer index0 : p1.getTriangleList()) {
-//                cond1 |= index0 == i;
-//            }
-//
-//            Point p2 = points.get(c);
-//            boolean cond2 = false;
-//            for (Integer index0 : p2.getTriangleList()) {
-//                cond2 |= index0 == i;
-//            }
-//
-//            if (!(cond0 && cond1 && cond2)) {
-//                System.err.println("WRONG NEIGHBOURS!");
-//                System.exit(-1);
-//            }
-//        }
-
-        double generateAStart = System.nanoTime();
         double[][] A = new double[whitePointsCount][whitePointsCount];
-
         for (int i = 0; i < whitePointsCount; i++) {
             for (Integer triangleIndex : points.get(i).getTriangleList()) {
 
@@ -280,7 +194,6 @@ public class Controller {
                 A[i][i] += s * (ai * ai + bi * bi);
             }
         }
-
         for (int i = 0; i < whitePointsCount; i++) {
 
             List<Integer> iTriangles = points.get(i).getTriangleList();
@@ -366,22 +279,15 @@ public class Controller {
                 }
             }
         }
+        timer.measure("\t", "generateA");
 
-        double generateAStop = System.nanoTime();
-        System.out.println("\t" + (generateAStop - generateAStart) / 1_000_000 + " ms [generateA]");
-
-        double generateBStart = System.nanoTime();
         double[] B = new double[whitePointsCount];
         for (int i = 0; i < whitePointsCount; i++) {
-
             List<Integer> iTriangles =  points.get(i).getTriangleList();
-
             for (int j = whitePointsCount; j < points.size(); j++) {
-
                 List<Integer> jTriangles =  points.get(j).getTriangleList();
                 List<Integer> tempTriangles = iTriangles.stream().filter(jTriangles::contains).toList();
                 if (tempTriangles.size() == 0) continue;
-
                 for (Integer triangleIndex : tempTriangles) {
 
                     Triangle triangle = triangles.get(triangleIndex);
@@ -453,20 +359,16 @@ public class Controller {
                 }
             }
         }
-        double generateBStop = System.nanoTime();
-        System.out.println("\t" + (generateBStop - generateBStart) / 1_000_000 + " ms [generateB]");
+        timer.measure("\t", "generateB");
 
-
-        double findSolutionStart = System.nanoTime();
+        // Searching of solution
         RealMatrix coefficients = new Array2DRowRealMatrix(A, false);
-        DecompositionSolver solver = new QRDecomposition(coefficients).getSolver(); // 4000 ms
+        DecompositionSolver solver = new QRDecomposition(coefficients).getSolver();
         RealVector constants = new ArrayRealVector(B, false);
         RealVector solution = solver.solve(constants);
-        double findSolutionStop = System.nanoTime();
-        System.out.println("\t" + (findSolutionStop - findSolutionStart) / 1_000_000 + " ms [findSolution]");
+        timer.measure("\t", "findSolution");
 
         // Mapping solution to points value
-        double mappingSolutionStart = System.nanoTime();
         min = solution.getMinValue();
         max = solution.getMaxValue();
         for (int i = 0; i < whitePointsCount; i++) {
@@ -477,20 +379,38 @@ public class Controller {
             double value = valueMapper(points.get(i).getValue(), min, max);
             points.get(i).setValue(value);
         }
-        double mappingSolutionStop = System.nanoTime();
-        System.out.println("\t" + (mappingSolutionStop - mappingSolutionStart) / 1_000_000 + " ms [mappingSolution]");
+        timer.measure("\t", "mappingSolution");
 
-        double createIsolineStart = System.nanoTime();
+        // Creating isoline
+        int isolineCount = (int) Math.round(isolineCountSlider.getValue());
         for (Triangle t : triangles) {
             Point a = points.get(t.getIndexA());
             Point b = points.get(t.getIndexB());
             Point c = points.get(t.getIndexC());
-            t.createIsoline(a, b, c);
+            t.createIsoline(a, b, c, isolineCount);
         }
-        double createIsolineStop = System.nanoTime();
-        System.out.println("\t" + (createIsolineStop - createIsolineStart) / 1_000_000 + " ms [createIsoline]");
+        timer.measure("\t", "createIsoline");
 
-
+        // Create force line
+        for (int i = 0; i < 100_000; i++) {
+            double x = ThreadLocalRandom.current().nextDouble(-1, 1);
+            double y = ThreadLocalRandom.current().nextDouble(-1, 1);
+            Triangle triangle = null;
+            boolean flag = true;
+            while (flag) {
+                x = ThreadLocalRandom.current().nextDouble(-1, 1);
+                y = ThreadLocalRandom.current().nextDouble(-1, 1);
+                for (Triangle t : triangles) {
+                    if (t.containsPoint(x, y)) {
+                        triangle = t;
+                        flag = false;
+                        break;
+                    }
+                }
+            }
+            triangle.createForceLine(x, y);
+        }
+        timer.measure("\t", "createForceLine");
     }
 
     double valueMapper(double value, double min, double max) {
@@ -532,42 +452,63 @@ public class Controller {
             double r = 0.01;
             for (Point p : points) {
                 double value = p.getValue();
-
                 if (value > 0.5) {
-                    graphicsContext.setFill(Color.BLACK.interpolate(Color.RED, 2 * (p.getValue() - 0.5)));
+                    graphicsContext.setFill(Color.BLACK.interpolate(Color.RED, 2 * (value - 0.5)));
                 } else {
-                    graphicsContext.setFill(Color.BLUE.interpolate(Color.BLACK, 2 * p.getValue()));
+                    graphicsContext.setFill(Color.BLUE.interpolate(Color.BLACK, 2 * value));
                 }
-
-//            graphicsContext.setFill(Color.BLUE.interpolate(Color.RED, value));
-
                 graphicsContext.fillOval(p.x() - r, p.y() - r, 2 * r, 2 * r);
             }
         }
 
-        if (configurationCheckBox.isSelected()) {
+        // Draw configuration
+        if (configurationShowCheckBox.isSelected()) {
             graphicsContext.setLineWidth(0.5 * (1 / zoom));
             graphicsContext.setStroke(Color.WHITE);
             graphicsContext.strokeOval(-1, -1, 2, 2);
-
             double x = config.getX();
             double y = config.getY();
             double r = config.getZ();
             graphicsContext.strokeOval(x - r, y - r, 2 * r, 2 * r);
         }
 
-        if (isolineCheckBox.isSelected() && triangles != null) {
+        // Draw force line
+        if (triangles != null) {
             graphicsContext.setLineWidth(0.5 * (1 / zoom));
+            graphicsContext.setStroke(Color.LIGHTGREEN);
+            for (Triangle t : triangles) {
+                if (t.forceLine.isEmpty()) continue;
+                for (int i = 0; i < t.forceLine.size() / 2; i += 2) {
+                    double x1 = t.forceLine.get(i).getX();
+                    double y1 = t.forceLine.get(i).getY();
+                    double x2 = t.forceLine.get(i + 1).getX();
+                    double y2 = t.forceLine.get(i + 1).getY();
+                    graphicsContext.strokeLine(x1, y1, x2, y2);
+                }
+            }
+        }
+
+        // Draw isoline
+        if (isolineCheckBox.isSelected() && triangles != null) {
+            graphicsContext.setLineWidth(0.8 * (1 / zoom));
             graphicsContext.setStroke(Color.YELLOW);
             for (Triangle t : triangles) {
-                if (t.isolines.isEmpty()) {
+                if (t.isoline.isEmpty()) {
                     continue;
                 }
-                for (List<Point> isoline : t.isolines) {
-                    double x1 = isoline.get(0).x();
-                    double y1 = isoline.get(0).y();
-                    double x2 = isoline.get(1).x();
-                    double y2 = isoline.get(1).y();
+                for (Isoline isoline : t.isoline) {
+
+//                    double value = isoline.getValue();
+//                    if (value > 0.5) {
+//                        graphicsContext.setStroke(Color.BLACK.interpolate(Color.RED, 2 * (value - 0.5)));
+//                    } else {
+//                        graphicsContext.setStroke(Color.BLUE.interpolate(Color.BLACK, 2 * value));
+//                    }
+
+                    double x1 = isoline.getX1();
+                    double y1 = isoline.getY1();
+                    double x2 = isoline.getX2();
+                    double y2 = isoline.getY2();
                     graphicsContext.strokeLine(x1, y1, x2, y2);
                 }
             }
@@ -576,34 +517,4 @@ public class Controller {
         graphicsContext.restore();
 
     }
-
-    private AWTChart getDemoChart(JavaFXChartFactory factory, String toolkit) {
-
-        List<Coord3d> cord3dList = new ArrayList<>();
-        for (Point p : points) {
-            double x = p.x();
-            double y = p.y();
-            double z = p.getValue();
-            cord3dList.add(new Coord3d(x, y, z));
-        }
-
-        final Shape surface = Builder.buildDelaunay(cord3dList);
-        surface.setColorMapper(new ColorMapper(new ColorMapRainbow(), surface.getBounds().getZmin(), surface.getBounds().getZmax(), new org.jzy3d.colors.Color(1, 1, 1, 0.6f)));
-        surface.setFaceDisplayed(true);
-        surface.setWireframeColor(new org.jzy3d.colors.Color(0, 0, 0, 0.3f));
-        surface.setWireframeDisplayed(true);
-
-        // -------------------------------
-        // Create a chart
-        Quality quality = Quality.Nicest;
-        quality.setSmoothPolygon(true);
-//        quality.setAnimated(true);
-
-        // let factory bind mouse and keyboard controllers to JavaFX node
-        AWTChart chart = (AWTChart) factory.newChart(quality, toolkit);
-        chart.getScene().getGraph().add(surface);
-
-        return chart;
-    }
-
 }

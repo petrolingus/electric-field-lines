@@ -5,106 +5,132 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.Slider?>
-<?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
-<HBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.petrolingus.electricfieldlines.Controller">
+<HBox prefHeight="900.0" prefWidth="1200.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.petrolingus.electricfieldlines.Controller">
   <children>
-      <VBox prefWidth="256.0" spacing="8.0" HBox.hgrow="ALWAYS">
+      <VBox maxWidth="300.0" minWidth="300.0" prefWidth="300.0" spacing="8.0">
          <children>
-            <TitledPane text="Configuration">
+            <TitledPane animated="false" collapsible="false" text="Конфигурация">
                <content>
-                  <VBox spacing="5.0">
+                  <VBox spacing="8.0">
                      <children>
                         <HBox spacing="6.0">
                            <children>
-                              <Label maxHeight="1.7976931348623157E308" maxWidth="48.0" minWidth="48.0" prefWidth="48.0" text="Radius" HBox.hgrow="ALWAYS" />
-                              <TextField editable="false" maxHeight="1.7976931348623157E308" maxWidth="48.0" minWidth="48.0" prefWidth="48.0" text="0.32" />
-                              <Slider fx:id="radiusSlider" blockIncrement="0.1" majorTickUnit="0.2" max="1.0" maxHeight="1.7976931348623157E308" minorTickCount="2" value="0.5" />
+                              <Label maxWidth="100.0" minWidth="100.0" prefWidth="100.0" text="Показывать" />
+                              <CheckBox fx:id="configurationShowCheckBox" mnemonicParsing="false" selected="true" />
+                           </children>
+                        </HBox>
+                        <Label text="Две оркужности" />
+                        <Separator prefWidth="200.0" />
+                        <HBox spacing="6.0">
+                           <children>
+                              <Label maxWidth="100.0" minWidth="100.0" prefWidth="100.0" text="Радиус" />
+                              <Slider fx:id="configurationInnerRadiusSlider" blockIncrement="0.1" majorTickUnit="0.2" max="1.0" maxHeight="1.7976931348623157E308" minorTickCount="2" showTickLabels="true" showTickMarks="true" value="0.5" HBox.hgrow="ALWAYS" />
                            </children>
                         </HBox>
                         <HBox spacing="6.0">
                            <children>
-                              <Label maxHeight="1.7976931348623157E308" maxWidth="48.0" minWidth="48.0" prefWidth="48.0" text="Shift" HBox.hgrow="ALWAYS" />
-                              <TextField editable="false" maxHeight="1.7976931348623157E308" maxWidth="48.0" minWidth="48.0" prefWidth="48.0" text="0.32" />
-                              <Slider fx:id="shiftSlider" blockIncrement="0.1" majorTickUnit="0.2" max="1.0" maxHeight="1.7976931348623157E308" minorTickCount="2" />
+                              <Label maxWidth="100.0" minWidth="100.0" prefWidth="100.0" text="Сдвиг центра" />
+                              <Slider fx:id="configurationCenterShiftSlider" blockIncrement="0.1" majorTickUnit="0.2" max="1.0" maxHeight="1.7976931348623157E308" minorTickCount="2" showTickLabels="true" showTickMarks="true" HBox.hgrow="ALWAYS" />
                            </children>
                         </HBox>
                         <HBox spacing="6.0">
                            <children>
-                              <Label maxHeight="1.7976931348623157E308" maxWidth="48.0" minWidth="48.0" prefWidth="48.0" text="Angle" HBox.hgrow="ALWAYS" />
-                              <TextField editable="false" maxHeight="1.7976931348623157E308" maxWidth="48.0" minWidth="48.0" prefWidth="48.0" text="0.32" />
-                              <Slider fx:id="angleSlider" blockIncrement="0.1" majorTickUnit="0.2" max="1.0" maxHeight="1.7976931348623157E308" minorTickCount="2" />
+                              <Label maxWidth="100.0" minWidth="100.0" prefWidth="100.0" text="Угол поворота" />
+                              <Slider fx:id="configurationClockwiseAngleSlider" blockIncrement="0.1" majorTickUnit="0.2" max="1.0" maxHeight="1.7976931348623157E308" minorTickCount="2" showTickLabels="true" showTickMarks="true" HBox.hgrow="ALWAYS" />
                            </children>
                         </HBox>
-                        <HBox spacing="6.0">
-                           <children>
-                              <Label maxHeight="1.7976931348623157E308" maxWidth="48.0" minWidth="48.0" prefWidth="48.0" text="Charge" HBox.hgrow="ALWAYS" />
-                              <TextField fx:id="chargeTextField" editable="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="120" HBox.hgrow="ALWAYS" />
-                           </children>
-                        </HBox>
+                        <Separator prefWidth="200.0" />
+                        <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Создать конфигурацию" />
                      </children>
                   </VBox>
                </content>
             </TitledPane>
-            <TitledPane text="Triangulation">
+            <TitledPane animated="false" collapsible="false" text="Триангуляция">
                <content>
-                  <VBox spacing="5.0">
+                  <VBox spacing="8.0">
                      <children>
-                        <HBox spacing="6.0">
+                        <HBox>
                            <children>
-                              <Label maxHeight="1.7976931348623157E308" maxWidth="48.0" minWidth="48.0" prefWidth="48.0" text="Points" HBox.hgrow="ALWAYS" />
-                              <TextField fx:id="pointsIndicator" editable="false" maxHeight="1.7976931348623157E308" maxWidth="48.0" minWidth="48.0" prefWidth="48.0" text="25" />
-                              <Slider fx:id="pointsSlider" blockIncrement="0.1" majorTickUnit="0.2" max="64.0" maxHeight="1.7976931348623157E308" min="8.0" minorTickCount="2" value="25.0" />
-                           </children>
-                        </HBox>
-                     </children>
-                  </VBox>
-               </content>
-            </TitledPane>
-            <TitledPane text="Visualization">
-               <content>
-                  <VBox spacing="5.0">
-                     <children>
-                        <HBox spacing="6.0">
-                           <children>
-                              <Label maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Show configuration" HBox.hgrow="ALWAYS" />
-                              <CheckBox fx:id="configurationCheckBox" mnemonicParsing="false" selected="true" />
-                           </children>
-                        </HBox>
-                        <HBox spacing="6.0">
-                           <children>
-                              <Label maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Show triangulation" HBox.hgrow="ALWAYS" />
+                              <Label maxWidth="100.0" minWidth="100.0" prefWidth="100.0" text="Показывать" />
                               <CheckBox fx:id="triangulationCheckBox" mnemonicParsing="false" />
                            </children>
                         </HBox>
-                        <HBox spacing="6.0">
+                        <HBox>
                            <children>
-                              <Label maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Show points" HBox.hgrow="ALWAYS" />
-                              <CheckBox fx:id="pointsCheckBox" mnemonicParsing="false" selected="true" />
-                           </children>
-                        </HBox>
-                        <HBox spacing="6.0">
-                           <children>
-                              <Label maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Show isolines" HBox.hgrow="ALWAYS" />
-                              <CheckBox fx:id="isolineCheckBox" mnemonicParsing="false" />
+                              <Label maxWidth="100.0" minWidth="100.0" prefWidth="100.0" text="Число точек" />
+                              <Slider fx:id="pointsSlider" blockIncrement="0.1" majorTickUnit="30.0" maxHeight="1.7976931348623157E308" min="10.0" minorTickCount="2" showTickLabels="true" showTickMarks="true" value="40.0" HBox.hgrow="ALWAYS" />
                            </children>
                         </HBox>
                      </children>
                   </VBox>
                </content>
             </TitledPane>
-            <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onButtonPressed" text="Calculate" />
+            <TitledPane animated="false" collapsible="false" text="Изолинии">
+               <content>
+                  <VBox spacing="8.0">
+                     <children>
+                        <HBox>
+                           <children>
+                              <Label maxWidth="100.0" minWidth="100.0" prefWidth="100.0" text="Показывать" HBox.hgrow="ALWAYS" />
+                              <CheckBox fx:id="isolineCheckBox" mnemonicParsing="false" />
+                           </children>
+                        </HBox>
+                        <HBox>
+                           <children>
+                              <Label maxWidth="100.0" minWidth="100.0" prefWidth="100.0" text="Число линий" HBox.hgrow="ALWAYS" />
+                              <Slider fx:id="isolineCountSlider" blockIncrement="1.0" maxHeight="1.7976931348623157E308" minorTickCount="4" showTickLabels="true" showTickMarks="true" value="10.0" HBox.hgrow="ALWAYS" />
+                           </children>
+                        </HBox>
+                     </children>
+                  </VBox>
+               </content>
+            </TitledPane>
+            <TitledPane text="Силовое поле">
+               <content>
+                  <VBox spacing="8.0">
+                     <children>
+                        <HBox>
+                           <children>
+                              <Label maxWidth="100.0" minWidth="100.0" prefWidth="100.0" text="Показывать" HBox.hgrow="ALWAYS" />
+                              <CheckBox fx:id="fieldLineCheckBox" mnemonicParsing="false" />
+                           </children>
+                        </HBox>
+                        <HBox>
+                           <children>
+                              <Label maxWidth="100.0" minWidth="100.0" prefWidth="100.0" text="Число линий" HBox.hgrow="ALWAYS" />
+                              <Slider fx:id="fieldLineCountSlider" blockIncrement="1.0" maxHeight="1.7976931348623157E308" minorTickCount="4" showTickLabels="true" showTickMarks="true" value="10.0" HBox.hgrow="ALWAYS" />
+                           </children>
+                        </HBox>
+                     </children>
+                  </VBox>
+               </content>
+            </TitledPane>
+            <TitledPane animated="false" collapsible="false" text="Распределение потенциала">
+               <content>
+                  <VBox spacing="8.0">
+                     <children>
+                        <HBox spacing="6.0">
+                           <children>
+                              <Label maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Показывать" HBox.hgrow="ALWAYS" />
+                              <CheckBox fx:id="pointsCheckBox" mnemonicParsing="false" selected="true" />
+                           </children>
+                        </HBox>
+                        <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onFindSolution" text="Рассчитать" />
+                     </children>
+                  </VBox>
+               </content>
+            </TitledPane>
          </children>
          <padding>
             <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
          </padding>
       </VBox>
-    <Canvas fx:id="canvas" height="720.0" width="640.0" />
-      <Pane fx:id="plot3d" prefWidth="720.0" HBox.hgrow="ALWAYS" />
+    <Canvas fx:id="canvas" height="900.0" width="900.0" />
   </children>
 </HBox>
