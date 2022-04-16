@@ -1,9 +1,5 @@
 package me.petrolingus.electricfieldlines;
 
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.concurrent.WorkerStateEvent;
-import javafx.event.EventHandler;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
@@ -11,20 +7,12 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.Slider;
 import javafx.scene.paint.Color;
-import me.petrolingus.electricfieldlines.core.Algorithm;
-import me.petrolingus.electricfieldlines.core.Triangulation;
 import me.petrolingus.electricfieldlines.core.configuration.TwoCircleConfiguration;
-import me.petrolingus.electricfieldlines.core.generator.DataGenerator;
-import me.petrolingus.electricfieldlines.measure.Timer;
 import me.petrolingus.electricfieldlines.util.Isoline;
 import me.petrolingus.electricfieldlines.util.Point;
 import me.petrolingus.electricfieldlines.util.Triangle;
-import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math3.linear.*;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class Controller {
 
