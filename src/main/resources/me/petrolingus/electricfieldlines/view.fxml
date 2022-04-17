@@ -6,9 +6,11 @@
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.RadioButton?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.Slider?>
 <?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
@@ -123,6 +125,13 @@
                               <CheckBox fx:id="pointsCheckBox" mnemonicParsing="false" selected="true" />
                            </children>
                         </HBox>
+                        <RadioButton fx:id="luDecompositionRadio" mnemonicParsing="false" text="LU Decomposition">
+                           <toggleGroup>
+                              <ToggleGroup fx:id="decompositionGroup" />
+                           </toggleGroup>
+                        </RadioButton>
+                        <RadioButton fx:id="qrDecompositionRadio" mnemonicParsing="false" selected="true" text="QR Decomposition" toggleGroup="$decompositionGroup" />
+                        <RadioButton fx:id="rrqrDecompositionRadio" mnemonicParsing="false" text="RRQR Decomposition" toggleGroup="$decompositionGroup" />
                         <Button fx:id="button" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onFindSolution" text="Рассчитать" />
                      </children>
                   </VBox>
@@ -136,7 +145,7 @@
       <StackPane>
          <children>
           <Canvas fx:id="canvas" height="900.0" width="900.0" />
-            <ProgressIndicator fx:id="progressIndicator" progress="0.0" />
+            <ProgressIndicator fx:id="progressIndicator" progress="0.0" visible="false" />
          </children>
       </StackPane>
   </children>

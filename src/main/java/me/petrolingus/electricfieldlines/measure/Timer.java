@@ -15,7 +15,7 @@ public class Timer {
     public void measure(String preMsg, String msg) {
         double durationImNanoseconds = System.nanoTime() - start;
         double durationInMillis = durationImNanoseconds / 1_000_000;
-        System.out.println(preMsg + durationInMillis + "ms [" + msg + "]");
+        System.out.println(preMsg + durationInMillis + " ms [" + msg + "]");
         start = System.nanoTime();
     }
 }

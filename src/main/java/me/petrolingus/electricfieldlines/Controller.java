@@ -1,12 +1,12 @@
 package me.petrolingus.electricfieldlines;
 
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ProgressIndicator;
-import javafx.scene.control.Slider;
+import javafx.scene.control.*;
 import javafx.scene.paint.Color;
+import me.petrolingus.electricfieldlines.core.Algorithm;
 import me.petrolingus.electricfieldlines.core.configuration.TwoCircleConfiguration;
 import me.petrolingus.electricfieldlines.util.Isoline;
 import me.petrolingus.electricfieldlines.util.Point;
@@ -37,6 +37,10 @@ public class Controller {
     // Solution
     public CheckBox pointsCheckBox;
     public Button button;
+    public ToggleGroup decompositionGroup;
+    public RadioButton luDecompositionRadio;
+    public RadioButton qrDecompositionRadio;
+    public RadioButton rrqrDecompositionRadio;
 
     // Scene
     public Canvas canvas;
@@ -51,6 +55,8 @@ public class Controller {
 
     private static Service service;
 
+    private Algorithm.Type type = Algorithm.Type.QR;
+
     public void initialize() {
 
         service = new Service();
@@ -60,6 +66,16 @@ public class Controller {
             triangles = service.getTriangles();
             service.reset();
             draw();
+        });
+
+        decompositionGroup.selectedToggleProperty().addListener((observable, oldValue, newValue) -> {
+            if (observable.getValue().equals(luDecompositionRadio)) {
+                type = Algorithm.Type.LU;
+            } else if (observable.getValue().equals(qrDecompositionRadio)) {
+                type = Algorithm.Type.QR;
+            } else {
+                type = Algorithm.Type.RRQR;
+            }
         });
 
         progressIndicator.progressProperty().bind(service.progressProperty());
@@ -77,6 +93,7 @@ public class Controller {
         triangulationCheckBox.selectedProperty().addListener((value) -> draw());
         pointsCheckBox.selectedProperty().addListener((value) -> draw());
         isolineCheckBox.selectedProperty().addListener((value) -> draw());
+        fieldLineCheckBox.selectedProperty().addListener((value) -> draw());
 
         pointsSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
             double value = 10 * Math.round(newValue.doubleValue() / 10);
@@ -116,6 +133,7 @@ public class Controller {
         service.setPointsSliderValue(pointsSlider.getValue());
         service.setIsolineCountSliderValue(isolineCountSlider.getValue());
         service.setFieldLineCountSliderValue(fieldLineCountSlider.getValue());
+        service.setType(type);
         service.start();
     }
 

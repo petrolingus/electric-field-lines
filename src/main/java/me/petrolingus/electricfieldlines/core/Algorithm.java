@@ -8,11 +8,16 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 import org.apache.commons.math3.linear.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class Algorithm {
+
+    public static enum Type {
+        LU,
+        QR,
+        RRQR
+    }
 
     private final List<Point> points;
     private final List<Triangle> triangles;
@@ -20,12 +25,15 @@ public class Algorithm {
     private final int isolineCount;
     private final int forceLineCount;
 
-    public Algorithm(Configuration configuration, List<Point> points, List<Triangle> triangles, int isolineCount, int forceLineCount) {
+    private Type type;
+
+    public Algorithm(Configuration configuration, List<Point> points, List<Triangle> triangles, int isolineCount, int forceLineCount, Type type) {
         this.configuration = configuration;
         this.points = points;
         this.triangles = triangles;
         this.isolineCount = isolineCount;
         this.forceLineCount = forceLineCount;
+        this.type = type;
     }
 
     public void process() {
@@ -85,6 +93,7 @@ public class Algorithm {
                 A[i][i] += s * (ai * ai + bi * bi);
             }
         }
+        timer.measure("\t", "generateA-part1");
         for (int i = 0; i < whitePointsCount; i++) {
 
             List<Integer> iTriangles = points.get(i).getTriangleList();
@@ -152,25 +161,33 @@ public class Algorithm {
                         }
                     }
 
-                    Vector3D p21i = new Vector3D(pt2.x() - pt1.x(), pt2.y() - pt1.y(), -1);
-                    Vector3D p31i = new Vector3D(pt3.x() - pt1.x(), pt3.y() - pt1.y(), -1);
-                    Vector3D vi = p21i.crossProduct(p31i);
-                    double ai = vi.getX();
-                    double bi = vi.getY();
+                    double ai = (pt2.y() - pt1.y()) * (-1) - (pt3.y() - pt1.y()) * (-1);
+                    double bi = (pt3.x() - pt1.x()) * (-1) - (pt2.x() - pt1.x()) * (-1);
+                    double ci = (pt3.x() - pt1.x()) * (pt2.y() - pt1.y()) - (pt3.y() - pt1.y()) * (pt2.x() - pt1.x());
+                    double s = Math.sqrt(ai * ai + bi * bi + ci * ci) / 2.0;
 
-                    Vector3D p21j = new Vector3D(pt2.x() - pt1.x(), pt2.y() - pt1.y(), 1);
-                    Vector3D p31j = new Vector3D(pt3.x() - pt1.x(), pt3.y() - pt1.y(), 0);
-                    Vector3D vj = p21j.crossProduct(p31j);
-                    double aj = vj.getX();
-                    double bj = vj.getY();
+                    double aj = (pt2.y() - pt1.y()) * (0) - (pt3.y() - pt1.y()) * (1);
+                    double bj = (pt3.x() - pt1.x()) * (1) - (pt2.x() - pt1.x()) * (0);
 
-                    double s = vi.getNorm() / 2.0;
+//                    Vector3D p21i = new Vector3D(pt2.x() - pt1.x(), pt2.y() - pt1.y(), -1);
+//                    Vector3D p31i = new Vector3D(pt3.x() - pt1.x(), pt3.y() - pt1.y(), -1);
+//                    Vector3D vi = p21i.crossProduct(p31i);
+//                    double ai = vi.getX();
+//                    double bi = vi.getY();
+//
+//                    Vector3D p21j = new Vector3D(pt2.x() - pt1.x(), pt2.y() - pt1.y(), 1);
+//                    Vector3D p31j = new Vector3D(pt3.x() - pt1.x(), pt3.y() - pt1.y(), 0);
+//                    Vector3D vj = p21j.crossProduct(p31j);
+//                    double aj = vj.getX();
+//                    double bj = vj.getY();
+
+//                    double s = vi.getNorm() / 2.0;
 
                     A[i][j] += s * (ai * aj + bi * bj);
                 }
             }
         }
-        timer.measure("\t", "generateA");
+        timer.measure("\t", "generateA-part2");
 
         double[] B = new double[whitePointsCount];
         for (int i = 0; i < whitePointsCount; i++) {
@@ -250,11 +267,16 @@ public class Algorithm {
                 }
             }
         }
+        System.out.println("vectorB size: " + B.length);
         timer.measure("\t", "generateB");
 
         // Searching of solution
         RealMatrix coefficients = new Array2DRowRealMatrix(A, false);
-        DecompositionSolver solver = new QRDecomposition(coefficients).getSolver();
+        DecompositionSolver solver = switch (type) {
+            case LU -> new LUDecomposition(coefficients).getSolver();
+            case QR -> new QRDecomposition(coefficients).getSolver();
+            case RRQR -> new RRQRDecomposition(coefficients).getSolver();
+        };
         RealVector constants = new ArrayRealVector(B, false);
         RealVector solution = solver.solve(constants);
         timer.measure("\t", "findSolution");
@@ -263,11 +285,12 @@ public class Algorithm {
         double min = solution.getMinValue();
         double max = solution.getMaxValue();
         for (int i = 0; i < whitePointsCount; i++) {
-            double value = valueMapper(solution.getEntry(i), min, max);
+            double value = valueMapper(solution.getEntry(i), -1, 1);
             points.get(i).setValue(value);
         }
+
         for (int i = whitePointsCount; i < points.size(); i++) {
-            double value = valueMapper(points.get(i).getValue(), min, max);
+            double value = valueMapper(points.get(i).getValue(), -1, 1);
             points.get(i).setValue(value);
         }
         timer.measure("\t", "mappingSolution");
@@ -282,7 +305,7 @@ public class Algorithm {
         timer.measure("\t", "createIsoline");
 
         // Create force line
-//        for (int i = 0; i < 1000; i++) {
+//        for (int i = 0; i < 10_000; i++) {
 //            double x = ThreadLocalRandom.current().nextDouble(-1, 1);
 //            double y = ThreadLocalRandom.current().nextDouble(-1, 1);
 //            Triangle triangle = null;
@@ -316,12 +339,88 @@ public class Algorithm {
                 }
             }
         }
-
         timer.measure("\t", "createForceLine");
     }
 
     private double valueMapper(double value, double min, double max) {
         return ((value - min) / (max - min));
+    }
+
+    public double[] methodKaczmarz(double[][] a, double[] b) {
+
+        Timer timer = new Timer();
+
+        int n = b.length;
+
+        double[] tempRow = new double[n];
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                tempRow[i] += a[i][j] * a[i][j];
+            }
+        }
+
+        double[] x = new double[n];
+        double eps = 1e-5;
+        double s1, s2;
+        double[] x1 = new double[n];
+
+        x[0] = 0.5;
+        for (int i = 1; i < n; i++) {
+            x[i] = 0.0;
+        }
+
+        double sumA = 0;
+        double sumB = 0;
+        double sumC = 0;
+        int count = 0;
+
+        s1 = s2 = 1;
+        while (s1 > eps * s2) {
+
+
+            long startA = System.nanoTime();
+            for (int i = 0; i < n; i++) {
+                x1[i] = x[i];
+            }
+            sumA += System.nanoTime() - startA;
+
+            long startB = System.nanoTime();
+            for (int i = 0; i < n; i++) {
+                s1 = 0;
+                s2 = tempRow[i];
+                for (int j = 0; j < n; j++) {
+                    double fa1 = a[i][j];
+                    s1 += fa1 * x[j];
+                }
+                double t = (b[i] - s1) / s2;
+                for (int j = 0; j < n; j++) {
+                    x[j] += a[i][j] * t;
+                }
+            }
+            sumB += System.nanoTime() - startB;
+
+            long startC = System.nanoTime();
+            s1 = 0;
+            s2 = 0;
+            for (int i = 0; i < n; i++) {
+                s1 += (x[i] - x1[i]) * (x[i] - x1[i]);
+                s2 += x[i] * x[i];
+            }
+            s1 = Math.sqrt(s1);
+            s2 = Math.sqrt(s2);
+            sumC += System.nanoTime() - startC;
+
+            count++;
+        }
+
+        System.out.println("\t\t" + sumA / 1_000_000 + " ms [partA]");
+        System.out.println("\t\t" + sumB / 1_000_000 + " ms [partB]");
+        System.out.println("\t\t" + sumC / 1_000_000 + " ms [partC]");
+        System.out.println("\t\t" + count + " count");
+
+        timer.measure("\t\t", "innerFindSolution");
+
+        return x;
     }
 
 }

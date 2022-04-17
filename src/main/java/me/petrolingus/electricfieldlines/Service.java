@@ -21,6 +21,8 @@ public class Service extends javafx.concurrent.Service<Void> {
     private double isolineCountSliderValue;
     private double fieldLineCountSliderValue;
 
+    private Algorithm.Type type;
+
     @Override
     protected Task<Void> createTask() {
         return new Task<>() {
@@ -46,7 +48,7 @@ public class Service extends javafx.concurrent.Service<Void> {
 
                 int isolineCount = (int) Math.round(isolineCountSliderValue);
                 int forceLineCount = (int) Math.round(fieldLineCountSliderValue);
-                Algorithm algorithm = new Algorithm(configuration, points, triangles, isolineCount, forceLineCount);
+                Algorithm algorithm = new Algorithm(configuration, points, triangles, isolineCount, forceLineCount, type);
                 algorithm.process();
                 timer.measure("process");
 
@@ -79,5 +81,9 @@ public class Service extends javafx.concurrent.Service<Void> {
 
     public List<Triangle> getTriangles() {
         return triangles;
+    }
+
+    public void setType(Algorithm.Type type) {
+        this.type = type;
     }
 }
